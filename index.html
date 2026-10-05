@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سوق البُن | قهوة مختصة محمّصة طازجة</title>
+<meta name="description" content="قهوة مختصة، بن عربي وعالمي، قهوة سعودية وهيل، محمّصة طازجة وتوصيل لجميع مناطق المملكة.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Reem+Kufi:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="announce">🚚 شحن مجاني للطلبات فوق 200 ريال &nbsp;•&nbsp; تحميص طازج كل أسبوع</div>
+
+<header class="header" id="top">
+  <div class="container nav">
+    <a href="#top" class="logo"><span class="logo-mark">☕</span><span>سوق البُن</span></a>
+    <nav class="links" id="links">
+      <a href="#categories">الأقسام</a>
+      <a href="#products">المنتجات</a>
+      <a href="#offer">العروض</a>
+      <a href="#story">قصتنا</a>
+      <a href="#reviews">آراء العملاء</a>
+      <a href="#contact">تواصل معنا</a>
+    </nav>
+    <div class="actions">
+      <button class="cart-btn" id="openCart" aria-label="السلة">🛒<span class="badge" id="cartCount">0</span></button>
+      <button class="burger" id="burger" aria-label="القائمة">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-in">
+    <div class="hero-text">
+      <span class="chip">قهوة مختصة · محمّصة طازجة</span>
+      <h1>اصحَ على <em>أجمل</em> فنجان قهوة</h1>
+      <p>نختار أجود حبوب البن من أفضل مزارع العالم، ونحمّصها بعناية لتوصلك طازجة حتى باب بيتك.</p>
+      <div class="hero-cta">
+        <a href="#products" class="btn btn-gold">تسوّق الآن</a>
+        <a href="#story" class="btn btn-ghost">اعرف قصتنا</a>
+      </div>
+      <ul class="stats">
+        <li><b>+50</b><span>صنف قهوة</span></li>
+        <li><b>4.9★</b><span>تقييم العملاء</span></li>
+        <li><b>48س</b><span>توصيل سريع</span></li>
+      </ul>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="glow"></div>
+      <svg viewBox="0 0 320 320" class="cup">
+        <defs>
+          <linearGradient id="cupg" x1="0" x2="1"><stop offset="0" stop-color="#F6EDE1"/><stop offset="1" stop-color="#D9C3A5"/></linearGradient>
+          <linearGradient id="cof" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#6F4E37"/><stop offset="1" stop-color="#2B1A12"/></linearGradient>
+        </defs>
+        <ellipse cx="160" cy="278" rx="120" ry="18" fill="#000" opacity=".35"/>
+        <ellipse cx="160" cy="252" rx="125" ry="22" fill="url(#cupg)"/>
+        <path d="M70 130h180l-14 98c-3 20-20 34-40 34h-72c-20 0-37-14-40-34z" fill="url(#cupg)"/>
+        <path d="M250 152c42-6 52 40 12 56l-18 6" fill="none" stroke="#E8D6BB" stroke-width="14" stroke-linecap="round"/>
+        <ellipse cx="160" cy="130" rx="90" ry="18" fill="url(#cof)"/>
+        <ellipse cx="160" cy="128" rx="60" ry="9" fill="#C8934B" opacity=".55"/>
+        <g class="steam" fill="none" stroke="#F6EDE1" stroke-width="6" stroke-linecap="round" opacity=".7">
+          <path d="M120 100c-14-18 14-30 0-50"/><path d="M160 100c-14-18 14-30 0-56"/><path d="M200 100c-14-18 14-30 0-50"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="perks">
+  <div class="container perks-grid">
+    <div><span>🔥</span><h4>تحميص طازج</h4><p>نحمّص طلبك قبل الشحن</p></div>
+    <div><span>🌍</span><h4>أجود المزارع</h4><p>إثيوبيا، كولومبيا، البرازيل</p></div>
+    <div><span>🚚</span><h4>توصيل لكل المملكة</h4><p>شحن سريع وآمن</p></div>
+    <div><span>💳</span><h4>دفع آمن</h4><p>مدى، Apple Pay، الدفع عند الاستلام</p></div>
+  </div>
+</section>
+
+<section class="section" id="categories">
+  <div class="container">
+    <div class="sec-head"><span class="kicker">الأقسام</span><h2>اختر ذوقك</h2></div>
+    <div class="cats">
+      <a class="cat c1" href="#products" data-filter="بن مختص"><span>🫘</span><h3>البن المختص</h3><p>حبوب أحادية المصدر</p></a>
+      <a class="cat c2" href="#products" data-filter="قهوة سعودية"><span>🫖</span><h3>القهوة السعودية</h3><p>مع الهيل والزعفران</p></a>
+      <a class="cat c3" href="#products" data-filter="كبسولات"><span>⚡</span><h3>كبسولات</h3><p>سهلة وسريعة</p></a>
+      <a class="cat c4" href="#products" data-filter="مستلزمات"><span>🧰</span><h3>المستلزمات</h3><p>V60، دلة، مطاحن</p></a>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="products">
+  <div class="container">
+    <div class="sec-head"><span class="kicker">الأكثر مبيعاً</span><h2>منتجاتنا المميزة</h2></div>
+    <div class="filters" id="filters">
+      <button class="on" data-f="الكل">الكل</button>
+      <button data-f="بن مختص">بن مختص</button>
+      <button data-f="قهوة سعودية">قهوة سعودية</button>
+      <button data-f="كبسولات">كبسولات</button>
+      <button data-f="مستلزمات">مستلزمات</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<section class="offer" id="offer">
+  <div class="container offer-in">
+    <div>
+      <span class="chip">عرض محدود</span>
+      <h2>اشترِ 2 بن مختص واحصل على <em>خصم 20%</em></h2>
+      <p>استخدم كود الخصم عند الدفع: <b class="code">COFFEE20</b></p>
+    </div>
+    <a href="#products" class="btn btn-gold">استفد من العرض</a>
+  </div>
+</section>
+
+<section class="section" id="story">
+  <div class="container story">
+    <div class="story-art" aria-hidden="true"><div class="ring"></div><span>🌱</span></div>
+    <div>
+      <span class="kicker">قصتنا</span>
+      <h2>من المزرعة إلى فنجانك</h2>
+      <p>بدأنا بحب بسيط للقهوة. نتعامل مباشرة مع المزارعين، ونختار الحبوب يدوياً، ونحمّصها على دفعات صغيرة عشان نضمن لك نكهة نقية في كل رشفة.</p>
+      <ul class="ticks">
+        <li>حبوب مختارة بدرجة تقييم +85</li>
+        <li>تحميص على دفعات صغيرة</li>
+        <li>تغليف يحفظ النكهة والرائحة</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="reviews">
+  <div class="container">
+    <div class="sec-head"><span class="kicker">آراء العملاء</span><h2>يقولون عنّا</h2></div>
+    <div class="reviews">
+      <figure><div class="stars">★★★★★</div><blockquote>أفضل قهوة جربتها، الرائحة تعبّي البيت والتوصيل كان سريع.</blockquote><figcaption>— عبدالله، الرياض</figcaption></figure>
+      <figure><div class="stars">★★★★★</div><blockquote>القهوة السعودية بالهيل طعمها أصلي، رجعت أطلب منهم كل شهر.</blockquote><figcaption>— نورة، جدة</figcaption></figure>
+      <figure><div class="stars">★★★★★</div><blockquote>تغليف راقي وجودة ممتازة، ينفع هدية كمان.</blockquote><figcaption>— فهد، الدمام</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="news">
+  <div class="container news-in">
+    <div><h3>اشترك واحصل على خصم 10%</h3><p>عروض حصرية وأصناف جديدة تصلك أولاً بأول.</p></div>
+    <form id="newsForm"><input type="email" required placeholder="بريدك الإلكتروني"><button class="btn btn-gold">اشترك</button></form>
+  </div>
+</section>
+
+<footer class="footer" id="contact">
+  <div class="container foot">
+    <div><a href="#top" class="logo"><span class="logo-mark">☕</span><span>سوق البُن</span></a><p>قهوة مختصة محمّصة طازجة، نوصلها لك لين بيتك.</p></div>
+    <div><h4>روابط</h4><a href="#categories">الأقسام</a><a href="#products">المنتجات</a><a href="#offer">العروض</a></div>
+    <div><h4>تواصل معنا</h4><a href="#">واتساب: 05XXXXXXXX</a><a href="#">info@example.com</a><a href="#">الرياض، السعودية</a></div>
+    <div><h4>طرق الدفع</h4><p>مدى · Visa · Apple Pay · الدفع عند الاستلام</p></div>
+  </div>
+  <div class="copy">© 2026 سوق البُن — جميع الحقوق محفوظة</div>
+</footer>
+
+<a class="wa" href="#" aria-label="واتساب">💬</a>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-label="السلة">
+  <div class="drawer-head"><h3>سلة التسوق</h3><button id="closeCart" aria-label="إغلاق">✕</button></div>
+  <div class="drawer-body" id="cartItems"></div>
+  <div class="drawer-foot">
+    <div class="total"><span>المجموع</span><b id="cartTotal">0 ر.س</b></div>
+    <button class="btn btn-gold full" id="checkout">إتمام الطلب</button>
+  </div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
