@@ -16,7 +16,7 @@ export function build(mode = 'day') {
   // ---------- materials ----------
   const M = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0, ...o });
   const mat = {
-    charcoal: M(C.char, { roughness: 0.35, metalness: 0.55 }),
+    charcoal: M(0x4a4e54, { roughness: 0.5, metalness: 0.25 }),
     red: M(C.red, { roughness: 0.4, metalness: 0.2 }),
     yellow: M(C.yellow, { roughness: 0.45 }),
     white: M(C.white, { roughness: 0.5 }),
@@ -90,12 +90,13 @@ export function build(mode = 'day') {
   function signPost(x, y, text, color, w = 0.45) {
     const grp = new THREE.Group(); scene.add(grp);
     cyl(x, y, 0, 1.5, 0.025, mat.steelDark, grp, 12);
-    const t = tex(128, 128, (g, W, H) => { g.fillStyle = color; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.font = 'bold 84px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, W / 2, H / 2 + 4); });
+    const t = tex(128, 128, (g, W, H) => { g.fillStyle = color; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.font = (text.length > 2 ? 'bold 34px Arial' : 'bold 84px Arial'); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, W / 2, H / 2 + 4); });
     const pl = new THREE.Mesh(new THREE.BoxGeometry(w, w, 0.03), [M(0x222), M(0x222), M(0x222), M(0x222), new THREE.MeshStandardMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: night ? 0.8 : 0.1 }), M(0x222)]);
     pl.position.copy(P(x, y + 0.03, 1.55)); pl.castShadow = true; grp.add(pl);
   }
   // customer bays are bays 2..5 → numbered 1..4 per brief; the delivery bay carries a "D" style sign
   for (let i = 1; i < 5; i++) signPost(bayCx(i), bayY0 + 0.1, String(i), '#C7311F');
+  signPost(bayCx(0), bayY0 + 0.1, 'تطبيقات', '#111111');
 
   // ---------- building ----------
   const bld = new THREE.Group(); scene.add(bld);
@@ -158,7 +159,7 @@ export function build(mode = 'day') {
   // parapet cap
   box(-0.17, 6.67, -0.17, 6.67, H, H + 0.04, mat.steelDark, bld);
   // ---- roof slab (structural ceiling at 3.2) & roof deck
-  const roof = box(-0.15, 6.65, -0.15, 6.65, WH, WH + 0.14, M(0x6d7072, { roughness: 0.95 }), bld);
+  const roof = box(-0.14, 6.64, -0.14, 6.64, WH, WH + 0.14, M(0x6d7072, { roughness: 0.95 }), bld);
   roof.name = 'roof';
   // suspended ceiling at 2.8
   const ceil = box(0, 6.5, 0, 6.5, 2.78, 2.8, mat.ceilPanel, bld, false); ceil.name = 'ceiling';
@@ -228,13 +229,13 @@ export function build(mode = 'day') {
     const bw = 290, gap = 22, x0 = (W - (3 * bw + 2 * gap)) / 2;
     names.forEach((n, i) => {
       g.fillStyle = '#fff'; const x = x0 + i * (bw + gap); g.beginPath(); g.roundRect(x, 215, bw, 230, 18); g.fill();
-      g.fillStyle = '#111'; g.font = 'bold 66px Arial'; g.fillText(n, x + bw / 2, 330);
+      g.fillStyle = '#111'; g.font = (n.length > 5 ? 'bold 50px Arial' : 'bold 66px Arial'); g.fillText(n, x + bw / 2, 330);
     });
   });
   const dsM = [M(0x111), M(0x111), M(0x111), M(0x111), M(0x111), new THREE.MeshStandardMaterial({ map: dsign, emissive: 0xffffff, emissiveMap: dsign, emissiveIntensity: night ? 0.6 : 0.05, roughness: 0.6 })];
   const ds = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.7, 1.45), dsM); // x thin, faces -x
   ds.rotation.y = Math.PI; // map faces -x outward
-  ds.position.copy(P(-0.1, 4.8, 2.82)); ds.castShadow = true; bld.add(ds);
+  ds.position.copy(P(-0.23, 4.8, 2.82)); ds.castShadow = true; bld.add(ds);
   // BoxGeometry face order: +x,-x,+y,-y,+z,-z. After rotation by PI around y, +x face points to -x. Use index 0.
   dsM[0] = dsM[5]; dsM[5] = M(0x111);
   ds.material = dsM;
@@ -248,7 +249,7 @@ export function build(mode = 'day') {
     g.fillStyle = '#C7311F'; g.font = 'bold 92px Arial'; g.fillText('ممنوع الوقوف', W / 2, 760);
   });
   const pad = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.9), new THREE.MeshStandardMaterial({ map: padT, roughness: 0.7 }));
-  pad.rotation.x = -Math.PI / 2; pad.rotation.z = Math.PI / 2; // text reads toward the wall
+  pad.rotation.x = -Math.PI / 2; pad.rotation.z = -Math.PI / 2; // text reads toward the wall
   pad.position.copy(P(-1.35, 4.8, 0.008)); pad.receiveShadow = true; scene.add(pad);
 
   // ---- canopy (1.5 m projection, yellow edge, LED strip, downlights)
@@ -453,7 +454,8 @@ export function build(mode = 'day') {
 
   // ---------- vehicles / people / props ----------
   function car(x, y, color, face = 'north') {
-    const g = new THREE.Group(); scene.add(g);
+    const outer = new THREE.Group(); scene.add(outer);
+    const g = new THREE.Group(); g.position.set(OX, 0, OZ); outer.add(g);
     const cm = M(color, { roughness: 0.25, metalness: 0.6 });
     const body = box(-0.9, 0.9, -2.2, 2.2, 0.35, 0.9, cm, g);
     box(-0.8, 0.8, -1.0, 1.2, 0.9, 1.45, cm, g);
@@ -461,12 +463,11 @@ export function build(mode = 'day') {
     for (const [wx, wy] of [[-0.85, -1.4], [0.85, -1.4], [-0.85, 1.4], [0.85, 1.4]]) { const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 24), mat.rubber); wh.rotation.z = Math.PI / 2; wh.position.copy(P(wx, wy, 0.34)); wh.castShadow = true; g.add(wh); }
     box(-0.7, -0.45, 2.2, 2.21, 0.55, 0.7, mat.led, g, false); box(0.45, 0.7, 2.2, 2.21, 0.55, 0.7, mat.led, g, false);
     box(-0.7, -0.45, -2.21, -2.2, 0.55, 0.7, M(0xaa0000, { emissive: 0xaa0000, emissiveIntensity: night ? 2 : 0.2 }), g, false);
-    g.position.set(x, 0, y); // x,y here are three coordinates shift
-    g.userData.plan = true; return g;
+    outer.position.set(x, 0, y); return outer;
   }
   const carPos = (cx, cy) => [cx - OX, cy - OZ];
   const c1 = car(...carPos(bayCx(2), 11.4), 0xe8e8e8); c1.rotation.y = Math.PI;   // faces building (south->north?) front toward -z
-  const c2 = car(...carPos(bayCx(4), 11.6), 0x5b0f10); c2.rotation.y = Math.PI;
+  const c2 = car(...carPos(bayCx(4), 11.6), 0x2b3a55); c2.rotation.y = Math.PI;
   // staff member (faceless), red cap, white bag
   (function staff() {
     const g = new THREE.Group(); scene.add(g);
@@ -479,7 +480,7 @@ export function build(mode = 'day') {
     const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.45, 4, 8), shirt); arm.position.set(0.28, 1.1, -0.15); arm.rotation.x = -1.0; g.add(arm);
     const bag = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.28, 0.12), M(0xf6f3ea, { roughness: 0.9 })); bag.position.set(0.3, 0.95, -0.38); g.add(bag);
     const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.205, 0.07, 0.125), mat.red); stripe.position.set(0.3, 1.04, -0.38); g.add(stripe);
-    g.position.copy(P(bayCx(2) + 1.45, 10.1, 0)); g.rotation.y = Math.PI / 2 + 0.3;
+    g.position.copy(P(bayCx(2) + 1.5, 9.7, 0)); g.rotation.y = Math.PI / 2 - 0.2;
   })();
 
   // street lamps
@@ -490,7 +491,7 @@ export function build(mode = 'day') {
     box(x + 0.9, x + 1.45, y - 0.12, y + 0.12, 6.28, 6.4, mat.led, g, false);
     if (night) { const pl = new THREE.PointLight(0xffd9a0, 6, 14, 1.4); pl.position.copy(P(x + 1.1, y, 6.0)); scene.add(pl); }
   }
-  lamp(-3.0, 15.4); lamp(7.0, 15.4); lamp(11.0, 15.4); lamp(-3.5, 1.0);
+  lamp(-4.0, 15.4); lamp(11.8, 15.4); lamp(-3.5, 1.0);
 
   // palms
   function palm(x, y, s = 1, lean = 0.15) {
@@ -511,8 +512,8 @@ export function build(mode = 'day') {
     }
     g.position.copy(P(x, y, 0)); g.rotation.z = lean; g.rotation.y = x;
   }
-  palm(-2.6, 7.4, 1.0, 0.1); palm(9.2, 7.2, 1.1, -0.12); palm(9.4, 2.0, 1.0, -0.1); palm(-3.0, -1.2, 0.95, 0.08);
-  palm(6.4, 15.4, 0.9, 0.05); palm(1.6, 15.5, 1.0, -0.06);
+  palm(-7.0, 9.0, 1.0, 0.1); palm(9.2, 7.2, 1.1, -0.12); palm(9.4, 2.0, 1.0, -0.1); palm(-3.0, -1.2, 0.95, 0.08);
+  palm(12.5, 15.4, 0.9, 0.05); palm(-5.5, 15.5, 1.0, -0.06);
 
   // trash bin and small details
   box(7.0, 7.45, 6.9, 7.35, 0, 0.9, M(0x2c3035, { roughness: 0.7 }));
