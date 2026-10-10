@@ -1,0 +1,184 @@
+<title>حاسبة الدروبشيبنق</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: inputs panel beside a results panel; stacks on phones. Ledger-like, numbers first. */
+:root{
+  --bg:#EEF2F1; --surface:#FFFFFF; --ink:#13211E; --muted:#5B6B67; --line:#D5DEDB;
+  --accent:#0E6B61; --accent-ink:#FFFFFF; --good:#127A43; --good-bg:#DDF3E6;
+  --warn:#8A5A00; --warn-bg:#FBEBC8; --bad:#B3261E; --bad-bg:#F9DEDB;
+  --c1:#0E6B61; --c2:#4C7DB5; --c3:#B9822D; --c4:#8A6FB0; --c5:#C0564B;
+  --font:'IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1614; --surface:#16211F; --ink:#E6EFEC; --muted:#93A6A1; --line:#2A3A37;
+  --accent:#4FC3B3; --accent-ink:#06201C; --good:#6FD39A; --good-bg:#14352378; --warn:#F0C26A; --warn-bg:#3A2D0F;
+  --bad:#F28B82; --bad-bg:#3C1B18;
+  --c1:#4FC3B3; --c2:#7FA9D8; --c3:#D9A74F; --c4:#B59BD6; --c5:#E0857A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1614; --surface:#16211F; --ink:#E6EFEC; --muted:#93A6A1; --line:#2A3A37;
+  --accent:#4FC3B3; --accent-ink:#06201C; --good:#6FD39A; --good-bg:#14352378; --warn:#F0C26A; --warn-bg:#3A2D0F;
+  --bad:#F28B82; --bad-bg:#3C1B18;
+  --c1:#4FC3B3; --c2:#7FA9D8; --c3:#D9A74F; --c4:#B59BD6; --c5:#E0857A; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6}
+*{box-sizing:border-box}
+.wrap{max-width:1040px;margin-inline:auto;padding-inline:16px;padding-block:20px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+h1{font-size:24px;margin:0;font-weight:700}
+.sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+h2{font-size:13px;letter-spacing:.04em;color:var(--muted);margin:0 0 12px;font-weight:600}
+.field{display:grid;grid-template-columns:1fr 112px;gap:8px;align-items:center;padding-block:6px;border-bottom:1px dashed var(--line)}
+.field:last-of-type{border-bottom:0}
+.field label{font-size:14px}
+.field small{display:block;color:var(--muted);font-size:12px}
+.inp{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;padding-inline:8px;background:var(--bg)}
+.inp:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.inp input{width:100%;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;padding-block:7px;text-align:end;font-variant-numeric:tabular-nums}
+.inp input:focus{outline:none}
+.inp span{color:var(--muted);font-size:12px}
+.toggle{display:flex;gap:8px;align-items:center;padding-block:8px;font-size:14px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.hero{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.big{font-size:44px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:600}
+.pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+.kpi{border-top:2px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:12px}
+.bar{display:flex;height:22px;border-radius:5px;overflow:hidden;background:var(--line);margin-block:10px 8px}
+.bar i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:4px 16px;font-size:13px}
+.legend div{display:flex;justify-content:space-between;gap:8px}
+.legend em{font-style:normal;display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:6px}
+.legend b{font-variant-numeric:tabular-nums;font-weight:500}
+.stack{display:grid;gap:16px}
+.scen{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.note{font-size:13px;color:var(--muted);margin:12px 0 0}
+.verdict{margin:0;font-size:15px}
+.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px;margin-inline-start:6px}
+button{font:inherit;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:5px 12px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap" dir="rtl">
+  <header>
+    <div><h1>حاسبة الدروبشيبنق</h1><div class="sub">كل الأرقام بالريال السعودي. الأرقام الحالية مثال، عدّلها على منتجك.</div></div>
+    <button id="reset" type="button">رجوع للمثال</button>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-label="المدخلات">
+      <h2>بيانات المنتج</h2>
+      <div class="field"><label for="price">سعر البيع للعميل<small>شامل الضريبة لو فعّلتها</small></label><div class="inp"><input id="price" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+      <div class="field"><label for="cost">سعر المورد للقطعة</label><div class="inp"><input id="cost" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+      <div class="field"><label for="ship">شحن المورد للعميل</label><div class="inp"><input id="ship" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+      <div class="field"><label for="cpa">تكلفة الإعلان لكل طلب<small>إجمالي الصرف ÷ الطلبات</small></label><div class="inp"><input id="cpa" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+      <h2 style="margin-top:16px">رسوم ومخاطر</h2>
+      <div class="field"><label for="feePct">رسوم بوابة الدفع<small>نسبة من السعر، تحقق من بوابتك</small></label><div class="inp"><input id="feePct" type="number" inputmode="decimal" min="0" step="any"><span>%</span></div></div>
+      <div class="field"><label for="feeFix">رسوم ثابتة لكل عملية</label><div class="inp"><input id="feeFix" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+      <div class="field"><label for="ret">نسبة المرتجع<small>الطلبات اللي ترجع أو ترفض</small></label><div class="inp"><input id="ret" type="number" inputmode="decimal" min="0" max="100" step="any"><span>%</span></div></div>
+      <label class="toggle"><input id="vat" type="checkbox"> السعر يشمل ضريبة القيمة المضافة 15%</label>
+    </section>
+
+    <div class="stack">
+      <section class="panel" aria-live="polite">
+        <h2>صافي الربح للطلب الواحد</h2>
+        <div class="hero"><div class="big" id="net">0</div><span class="pill" id="status"></span></div>
+        <p class="verdict" id="verdict" style="margin-top:10px"></p>
+        <div class="kpis">
+          <div class="kpi"><b id="margin">0</b><span>هامش الربح من الإيراد</span></div>
+          <div class="kpi"><b id="beRoas">0</b><span>ROAS التعادل (أقل من هذا خسارة)</span></div>
+          <div class="kpi"><b id="beCpa">0</b><span>أعلى تكلفة إعلان مقبولة للطلب</span></div>
+          <div class="kpi"><b id="roas">0</b><span>ROAS الحالي</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>وين يروح كل ريال من سعر البيع</h2>
+        <div class="bar" id="bar" role="img" aria-label="توزيع التكاليف"></div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="panel">
+        <h2>سيناريو الشهر <span class="tag">تقدير</span></h2>
+        <div class="scen">
+          <div>
+            <div class="field" style="grid-template-columns:1fr 100px"><label for="perDay">طلبات يوميًا</label><div class="inp"><input id="perDay" type="number" inputmode="numeric" min="0" step="1"><span>طلب</span></div></div>
+            <div class="kpi" style="margin-top:8px"><b id="monthly">0</b><span>صافي الربح الشهري (30 يوم)</span></div>
+          </div>
+          <div>
+            <div class="field" style="grid-template-columns:1fr 100px"><label for="budget">ميزانية تجربة الإعلان</label><div class="inp"><input id="budget" type="number" inputmode="decimal" min="0" step="any"><span>ر.س</span></div></div>
+            <div class="kpi" style="margin-top:8px"><b id="testOut">0</b><span id="testLbl">نتيجة التجربة</span></div>
+          </div>
+        </div>
+        <p class="note">التقدير يفترض ثبات التكلفة والمرتجع. أي منتج جديد يحتاج عينة طلبات حقيقية قبل ما تحكم عليه، لا تعتمد على أول 5 إلى 10 طلبات.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+document.documentElement.dir='rtl';document.documentElement.lang='ar';
+var DEF={price:149,cost:35,ship:18,cpa:40,feePct:2.5,feeFix:1,ret:8,vat:true,perDay:5,budget:500};
+var ids=['price','cost','ship','cpa','feePct','feeFix','ret','perDay','budget'];
+var KEY='dropship-calc-v1';
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s)return Object.assign({},DEF,s)}catch(e){}return Object.assign({},DEF)}
+function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+var $=function(i){return document.getElementById(i)};
+var nf=new Intl.NumberFormat('ar-SA-u-nu-latn',{maximumFractionDigits:2});
+var money=function(v){return nf.format(Math.round(v*100)/100)+' ر.س'};
+var pct=function(v){return nf.format(Math.round(v*10)/10)+'%'};
+function read(){var s={};ids.forEach(function(i){var v=parseFloat($(i).value);s[i]=isFinite(v)&&v>=0?v:0});s.vat=$('vat').checked;return s}
+function write(s){ids.forEach(function(i){$(i).value=s[i]});$('vat').checked=s.vat}
+function calc(s){
+  var r=Math.min(s.ret,100)/100;
+  var vatAmt=s.vat?s.price-s.price/1.15:0;
+  var exVat=s.price-vatAmt;
+  var fee=s.price*s.feePct/100+s.feeFix;
+  var retLoss=r*exVat;               // الإيراد المسترد للعميل
+  var beforeAds=exVat-retLoss-s.cost-s.ship-fee;
+  var net=beforeAds-s.cpa;
+  return {vatAmt:vatAmt,exVat:exVat,fee:fee,retLoss:retLoss,beforeAds:beforeAds,net:net,
+    margin:exVat>0?net/exVat*100:0,
+    beCpa:Math.max(beforeAds,0),
+    beRoas:beforeAds>0?s.price/beforeAds:Infinity,
+    roas:s.cpa>0?s.price/s.cpa:Infinity};
+}
+function render(){
+  var s=read();save(s);var c=calc(s);
+  $('net').textContent=money(c.net);
+  $('net').style.color=c.net>0?'var(--good)':'var(--bad)';
+  var st=$('status'),v=$('verdict');
+  if(c.net<=0){st.className='pill bad';st.textContent='خسارة';v.textContent='كل طلب يكلفك '+money(-c.net)+'. لا تصعّد الصرف. ارفع السعر أو دوّر مورد أرخص أو خفّض تكلفة الإعلان.'}
+  else if(c.margin<15){st.className='pill warn';st.textContent='هامش ضعيف';v.textContent='ربح موجود لكن أي ارتفاع بسيط في الإعلان أو المرتجع يقلبه خسارة. هامش أقل من 15% خطر.'}
+  else{st.className='pill good';st.textContent='ربح مقبول';v.textContent='الأرقام تغطي نفسها. الخطوة التالية تثبيت النتيجة على عينة طلبات أكبر قبل التوسع.'}
+  $('margin').textContent=pct(c.margin);
+  $('beRoas').textContent=isFinite(c.beRoas)?nf.format(Math.round(c.beRoas*100)/100)+'x':'غير ممكن';
+  $('beCpa').textContent=money(c.beCpa);
+  $('roas').textContent=isFinite(c.roas)?nf.format(Math.round(c.roas*100)/100)+'x':'-';
+  // breakdown of selling price
+  var parts=[['سعر المورد',s.cost,'--c1'],['الشحن',s.ship,'--c2'],['الإعلان',s.cpa,'--c3'],['رسوم الدفع',c.fee,'--c4'],['ضريبة وخسارة المرتجع',c.vatAmt+c.retLoss,'--c5']];
+  var used=parts.reduce(function(a,p){return a+p[1]},0);
+  var profit=s.price-used;
+  var total=Math.max(s.price,used,1);
+  var bar=$('bar'),lg=$('legend');bar.innerHTML='';lg.innerHTML='';
+  parts.forEach(function(p){var i=document.createElement('i');i.style.width=(p[1]/total*100)+'%';i.style.background='var('+p[2]+')';bar.appendChild(i);
+    var d=document.createElement('div');d.innerHTML='<span><em style="background:var('+p[2]+')"></em>'+p[0]+'</span><b>'+money(p[1])+'</b>';lg.appendChild(d)});
+  var d=document.createElement('div');d.innerHTML='<span><em style="background:var(--good)"></em>'+(profit>=0?'الربح':'العجز')+'</span><b>'+money(profit)+'</b>';
+  if(profit>0){var i=document.createElement('i');i.style.width=(profit/total*100)+'%';i.style.background='var(--good)';bar.appendChild(i)}
+  lg.appendChild(d);
+  $('monthly').textContent=money(c.net*s.perDay*30);
+  $('monthly').style.color=c.net>=0?'var(--good)':'var(--bad)';
+  var orders=s.cpa>0?s.budget/s.cpa:0;
+  $('testOut').textContent=nf.format(Math.floor(orders))+' طلب، '+money(orders*c.net);
+  $('testOut').style.color=c.net>=0?'var(--good)':'var(--bad)';
+  $('testLbl').textContent='متوقع من ميزانية '+money(s.budget)+' بتكلفة طلب '+money(s.cpa);
+}
+write(load());
+ids.concat(['vat']).forEach(function(i){$(i).addEventListener('input',render)});
+$('reset').addEventListener('click',function(){write(DEF);render()});
+render();
+</script>
