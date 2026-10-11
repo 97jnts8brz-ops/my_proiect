@@ -87,7 +87,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 <div class="wrap">
   <header>
     <h1>فاحص الصفقة</h1>
-    <p>الخط البرتقالي والمنطقة الخضراء للشراء. الخط الأزرق والمنطقة الحمراء للبيع. أي جهة تتحقق شروطها يطلع لك التأكيد.</p>
+    <p>شروط الشراء: سحب السيولة، شمعتان تغلقان فوق الأخضر، EMA أسفل الصفقة. شروط البيع: سحب السيولة، شمعتان تغلقان تحت الأحمر، EMA أعلى الصفقة.</p>
   </header>
 
   <div class="verdict wait" id="verdict" role="status" aria-live="polite">
@@ -114,7 +114,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     <button type="button" class="btn" id="example">تحميل مثال (بيع NAS100)</button>
     <button type="button" class="btn" id="reset">تصفير كل الحقول</button>
   </div>
-  <p class="note">الأرقام المحملة أول مرة مثال وليست صفقتك. الوقت بتوقيت السعودية، والدخول مسموح من 16:00 إلى 00:00.</p>
+  <p class="note">الأرقام المحملة أول مرة مثال وليست صفقتك. التأكيد يعتمد على 3 شروط لكل جهة: سحب السيولة، إغلاق شمعتين خلف المنطقة، وEMA في الجهة الصحيحة. الوقت المعتاد للدخول 16:00 إلى 00:00 بتوقيت السعودية (معلومة فقط).</p>
 </div>
 
 <script>
@@ -133,12 +133,12 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
   var YN = function(b){ return b ? "نعم" : "لا"; };
 
   var DEFS = [
-    {id:"b1", g:"buy", color:"var(--orange)", title:"1) سحب السيولة (الخط البرتقالي)",
+    {id:"b1", g:"buy", color:"var(--orange)", title:"سحب السيولة (الخط البرتقالي)",
      rule:"السعر وصل فوق الخط البرتقالي.",
      fields:[["orange","مستوى الخط البرتقالي"],["sweep","أعلى سعر وصله"]],
      ev:function(){ var o=num(S.orange), x=num(S.sweep); if(o==null||x==null) return {s:"wait",why:"ناقص أرقام"};
        var ok=x>o; return {s:ok?"ok":"bad",why:f(x)+" > "+f(o)+" = "+YN(ok)}; }},
-    {id:"b2", g:"buy", color:"var(--green)", title:"2) المنطقة الشرائية (الأخضر)",
+    {id:"b2", g:"buy", color:"var(--green)", title:"إغلاق شمعتين فوق المنطقة الخضراء",
      rule:"إغلاق شمعتين متتاليتين فوق أعلى المنطقة الخضراء.",
      fields:[["gTop","أعلى المنطقة"],["gBot","أسفل المنطقة"],["gClose","إغلاق الشمعة الأولى"],["gClose2","إغلاق الشمعة الثانية"],["gVis","شمعتان متتاليتان أغلقتا فوق المنطقة (حسب الشارت)","check"]],
      ev:function(){ var t=num(S.gTop), c=num(S.gClose), c2=num(S.gClose2), vis=S.gVis==="1";
@@ -147,12 +147,12 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
        if (vis) return {s:"ok",why:"مؤكد من الشارت: شمعتان متتاليتان أغلقتا فوق المنطقة"};
        if (nm===false) return {s:"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" ليسا فوق "+f(t)};
        return {s:"wait",why:"اكتب الإغلاقين أو علّم الخيار"}; }},
-    {id:"s1", g:"sell", color:"var(--blue)", title:"3) السيولة الطبيعية (الخط الأزرق)",
+    {id:"s1", g:"sell", color:"var(--blue)", title:"سحب السيولة (الخط الأزرق)",
      rule:"السعر وصل للخط الأزرق أو نزل تحته.",
      fields:[["blue","مستوى الخط الأزرق"],["reach","أدنى سعر وصله"]],
      ev:function(){ var b=num(S.blue), r=num(S.reach); if(b==null||r==null) return {s:"wait",why:"ناقص أرقام"};
        var ok=r<=b; return {s:ok?"ok":"bad",why:f(r)+" ≤ "+f(b)+" = "+YN(ok)}; }},
-    {id:"s2", g:"sell", color:"var(--red)", title:"4) المنطقة البيعية (الأحمر)",
+    {id:"s2", g:"sell", color:"var(--red)", title:"إغلاق شمعتين تحت المنطقة الحمراء",
      rule:"إغلاق شمعتين متتاليتين تحت أسفل المنطقة الحمراء.",
      fields:[["rTop","أعلى المنطقة"],["rBot","أسفل المنطقة"],["rClose","إغلاق الشمعة الأولى"],["rClose2","إغلاق الشمعة الثانية"],["rVis","شمعتان متتاليتان أغلقتا تحت المنطقة (حسب الشارت)","check"]],
      ev:function(){ var b=num(S.rBot), c=num(S.rClose), c2=num(S.rClose2), vis=S.rVis==="1";
@@ -161,13 +161,13 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
        if (vis) return {s:"ok",why:"مؤكد من الشارت: شمعتان متتاليتان أغلقتا تحت المنطقة"};
        if (nm===false) return {s:"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" ليسا تحت "+f(b)};
        return {s:"wait",why:"اكتب الإغلاقين أو علّم الخيار"}; }},
-    {id:"time", g:"com", color:"var(--accent)", title:"وقت الدخول (جلسة نيويورك)",
+    {id:"time", g:"com", color:"var(--accent)", title:"وقت الدخول (معلومة فقط)",
      rule:"الدخول فقط من 16:00 إلى 00:00 بتوقيت السعودية.",
      fields:[["time","وقت الدخول","time"]], now:true,
      ev:function(){ if(!S.time) return {s:"wait",why:"اكتب الوقت أو اضغط الآن"};
        var p=S.time.split(":"), m=(+p[0])*60+(+p[1]), ok=m>=960&&m<=1439;
        return {s:ok?"ok":"bad",why:S.time+(ok?" داخل الجلسة":" خارج الجلسة")}; }},
-    {id:"candle", g:"com", color:"var(--muted)", title:"شمعة الدخول",
+    {id:"candle", g:"com", color:"var(--muted)", title:"شمعة الدخول (معلومة فقط)",
      rule:"الدخول من الشمعة الثانية بعد شمعة الإغلاق.",
      fields:[["candle","رقم الشمعة بعد الإغلاق"]],
      ev:function(){ var c=num(S.candle); if(c==null) return {s:"wait",why:"اكتب رقم الشمعة"};
@@ -193,7 +193,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     var heads = {
       buy:'<div class="ghead buy" id="h-buy"><div><h2>شراء</h2><small id="hs-buy"></small></div><span class="pill" id="hp-buy"></span></div>',
       sell:'<div class="ghead sell" id="h-sell"><div><h2>بيع</h2><small id="hs-sell"></small></div><span class="pill" id="hp-sell"></span></div>',
-      com:'<div class="ghead" id="h-com"><div><h2>شروط مشتركة</h2><small>تنطبق على الشراء والبيع</small></div></div>'};
+      com:'<div class="ghead" id="h-com"><div><h2>EMA ومعلومات إضافية</h2><small>EMA يدخل في التأكيد. الوقت والشمعة للمعلومة فقط</small></div></div>'};
     ["buy","sell","com"].forEach(function(g){ $("g-"+g).innerHTML = heads[g]; });
     DEFS.forEach(function(d){
       var card = document.createElement("div"); card.className = "card"; card.id = "card-"+d.id;
@@ -228,8 +228,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 
   function setup(dir, R){
     var ids = dir==="buy" ? ["b1","b2"] : ["s1","s2"];
-    var parts = [R[ids[0]], R[ids[1]], R.time, R.candle, emaCheck(dir)];
-    var names = [DEFS.filter(function(d){return d.id===ids[0]})[0].title, DEFS.filter(function(d){return d.id===ids[1]})[0].title, "الوقت", "شمعة الدخول", "موقع EMA"];
+    var parts = [R[ids[0]], R[ids[1]], emaCheck(dir)];
+    var names = [DEFS.filter(function(d){return d.id===ids[0]})[0].title, DEFS.filter(function(d){return d.id===ids[1]})[0].title, "موقع EMA"];
     var ok=0, bad=[], wait=0;
     parts.forEach(function(r,i){ if(r.s==="ok") ok++; else if(r.s==="bad") bad.push(names[i]); else wait++; });
     var s = bad.length ? "bad" : (wait ? "wait" : "ok");
@@ -247,13 +247,13 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       var k=x[0], o=x[1];
       $("h-"+k).classList.toggle("ok", o.s==="ok");
       $("hp-"+k).className = "pill "+o.s; $("hp-"+k).textContent = SLBL[o.s];
-      $("hs-"+k).textContent = o.ok+" / 5"+(o.bad.length ? " · غير محقق: "+o.bad[0] : (o.wait ? " · باقي "+o.wait+" ناقص" : ""));
+      $("hs-"+k).textContent = o.ok+" / 3"+(o.bad.length ? " · غير محقق: "+o.bad[0] : (o.wait ? " · باقي "+o.wait+" ناقص" : ""));
     });
     var v=$("verdict"), cls, t, sub;
     if (B.s==="ok" && Sx.s==="ok"){ cls="bad"; t="تعارض: لا تدخل"; sub="شروط الشراء والبيع محققة معا، راجع الأرقام"; }
     else if (B.s==="ok"){ cls="ok"; t="تأكيد شراء"; sub="كل شروط الشراء تحققت"; }
     else if (Sx.s==="ok"){ cls="ok"; t="تأكيد بيع"; sub="كل شروط البيع تحققت"; }
-    else { cls = (B.s==="wait"||Sx.s==="wait") && !(B.bad.length&&Sx.bad.length) ? "wait" : "bad"; t="لا تدخل"; sub="لا يوجد تأكيد. الشراء "+B.ok+"/5 والبيع "+Sx.ok+"/5"; }
+    else { cls = (B.s==="wait"||Sx.s==="wait") && !(B.bad.length&&Sx.bad.length) ? "wait" : "bad"; t="لا تدخل"; sub="لا يوجد تأكيد. الشراء "+B.ok+"/5 والبيع "+Sx.ok+"/3"; }
     var isEx = Object.keys(EXAMPLE).every(function(k){ return S[k] === EXAMPLE[k]; });
     if (isEx) sub += " (بيانات المثال)";
     v.className="verdict "+cls; $("vTitle").textContent=t; $("vSub").textContent=sub;
