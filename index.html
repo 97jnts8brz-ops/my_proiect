@@ -13,7 +13,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden}
 html,body,button,a,.portal{cursor:none!important}
-.experience{position:relative;width:100%;height:100%;min-height:540px;overflow:hidden;background:#0a0908}
+.experience{position:relative;width:100%;height:100%;min-height:540px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0f3a2f 0,#0a0908 70%)}
 .backgrounds,.background,.shade,.transition-layer,.transition-layer video{position:absolute;inset:0;width:100%;height:100%}
 .background{object-fit:cover;opacity:0;transition:opacity .8s ease}
 .background.is-visible{opacity:1}
@@ -372,7 +372,9 @@ body:not(.intro-ready) .header,body:not(.intro-ready) .planet-list,body:not(.int
       pts.forEach(function (p, i) { i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
       ctx.closePath(); ctx.clip();
       ctx.fillStyle = '#030303'; ctx.fillRect(0, 0, innerWidth, innerHeight);
-      drawCover(ctx, transitionActive ? tVideo : (states[current].image ? portalImage : portalVideo));
+      var src = transitionActive ? tVideo : (states[current].image ? portalImage : portalVideo);
+      if (src.tagName === 'VIDEO' && !src.videoWidth) src = portalImage; // video unavailable: show the bottle
+      drawCover(ctx, src);
       if (transitionActive) drawShade(ctx);
       ctx.restore();
     }
@@ -490,11 +492,12 @@ body:not(.intro-ready) .header,body:not(.intro-ready) .planet-list,body:not(.int
     pv.addEventListener('ended', finish);
     pv.addEventListener('error', finish);
     if (pv.readyState >= 1) go(); else pv.addEventListener('loadedmetadata', go);
-    setTimeout(finish, 12000); // safety net if the video never loads / plays
+    setTimeout(function () { if (!started) finish(); }, 4000); // video blocked / never loads
+    setTimeout(finish, 12000); // safety net if it stalls mid-play
   }
   async function startExperience() {
     var s = states[current];
-    await whenReady(s.image ? portalImage : portalVideo, ['loadeddata', 'load', 'error'], 2, 3000);
+    await whenReady(s.image ? portalImage : portalVideo, ['loadeddata', 'load', 'error'], 2, 1500);
     await revealMask();
     document.body.classList.add('intro-ready');
     setTimeout(revealPlanetContent, 850);
