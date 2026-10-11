@@ -56,7 +56,7 @@
   color-scheme:dark;
 }
 @media (prefers-color-scheme:light){
-  :root{
+  :root:not([data-theme="dark"]){
     --bg:#f0f5f6; --surface:#ffffff; --surface-2:#e3ecee;
     --line:rgba(6,32,40,.14); --field-line:rgba(6,32,40,.45);
     --text:#0a1f26; --muted:#46606a; --field:#ffffff;
@@ -66,8 +66,18 @@
     color-scheme:light;
   }
 }
+:root[data-theme="light"]{
+    --bg:#f0f5f6; --surface:#ffffff; --surface-2:#e3ecee;
+    --line:rgba(6,32,40,.14); --field-line:rgba(6,32,40,.45);
+    --text:#0a1f26; --muted:#46606a; --field:#ffffff;
+    --accent-ink:#7a5c14;
+    --halo:rgba(30,130,160,.22); --shade:rgba(6,40,52,.38);
+    --err:#a8281a;
+    color-scheme:light;
+}
 
 *{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
 html{scroll-behavior:smooth;scroll-padding-top:84px}
 body{background:var(--bg);color:var(--text);font-family:"Plex Arabic",Tahoma,system-ui,sans-serif;font-size:1rem;line-height:1.75;-webkit-font-smoothing:antialiased}
 img{display:block;max-width:100%}
@@ -200,8 +210,8 @@ footer .brand{color:var(--text)}
 .sticky-cta{display:none}
 
 /* reveal */
-.rv{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
-.rv.in{opacity:1;transform:none}
+.rv{transform:translateY(20px);transition:transform .8s var(--ease)}
+.rv.in{transform:none}
 
 @media (max-width:900px){
   .nav ul{display:none}
@@ -229,7 +239,7 @@ footer .brand{color:var(--text)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-  .rv{opacity:1;transform:none}
+  .rv{transform:none}
 }
 </style>
 </head>
@@ -373,6 +383,7 @@ footer .brand{color:var(--text)}
           </div>
           <div class="total"><span>الإجمالي</span><strong><span id="total">649</span> ر.س</strong></div>
           <button class="btn btn-primary" type="submit" style="width:100%">اطلب الآن</button>
+          <a id="waFallback" class="btn btn-ghost" href="#" target="_blank" rel="noopener" hidden>تابع الطلب على واتساب</a>
           <p class="fine">بالضغط على الزر يفتح واتساب برسالة جاهزة فيها بيانات طلبك. الدفع عند الاستلام.</p>
         </form>
       </div>
@@ -456,7 +467,9 @@ document.getElementById("orderForm").addEventListener("submit", e => {
     "الدفع: عند الاستلام"
   ].join("\n");
   try { window.fbq && fbq("track", "InitiateCheckout"); window.ttq && ttq.track("PlaceAnOrder"); window.snaptr && snaptr("track", "START_CHECKOUT"); } catch (_) {}
-  window.open("https://wa.me/" + STORE.whatsapp + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
+  const wa = "https://wa.me/" + STORE.whatsapp + "?text=" + encodeURIComponent(msg);
+  const w = window.open(wa, "_blank", "noopener");
+  if (!w) { const a = document.getElementById("waFallback"); a.href = wa; a.hidden = false; a.focus(); }
 });
 
 /* scroll reveal: يوضّح تسلسل القراءة، ويتعطل مع تقليل الحركة */
