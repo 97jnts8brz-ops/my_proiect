@@ -311,15 +311,19 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     return new Promise(function(res,rej){
       var img = new Image(), url = URL.createObjectURL(file);
       img.onload = function(){
-        var k = Math.min(1, 1600/Math.max(img.width,img.height)), c = document.createElement("canvas");
+        var k = Math.min(1, 2200/Math.max(img.width,img.height)), c = document.createElement("canvas");
         c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
         c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-        c.toBlob(function(b){ b ? res(b) : rej(new Error("x")); },"image/jpeg",0.88);
+        c.toBlob(function(b){ b ? res(b) : rej(new Error("x")); },"image/jpeg",0.93);
       };
       img.onerror = rej; img.src = url;
     });
   }
-  var PROMPT = "هذه لقطة شارت تداول. استخرج المستويات السعرية من المحور الأيمن بدقة. الألوان: الخط البرتقالي = مستوى سحب السيولة، المنطقة/الخطوط الخضراء = منطقة شراء، الخط الأزرق = السيولة الطبيعية، المنطقة/الخطوط الحمراء = منطقة بيع، الخط الأصفر المنحني = EMA، وأداة الصفقة (مستطيل أحمر/أخضر) تحدد الدخول والوقف والهدف. أعد JSON فقط بدون أي شرح بهذا الشكل، وضع null لأي قيمة غير ظاهرة بوضوح، والأرقام أرقام وليست نصوص: {\"dir\":\"buy|sell|null\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}. sweep = أعلى سعر لمس فوق الخط البرتقالي (أو أدنى سعر تحته إذا كان شراء).";
+  var PROMPT = "أنت تقرأ لقطة شاشة من TradingView. استخرج المستويات السعرية.\n"
+   + "قاعدة القراءة: على المحور الأيمن (محور الأسعار) توجد وسوم ملوّنة بنفس لون الخطوط الأفقية وفيها الرقم الدقيق (مثلا وسم برتقالي ووسم أحمر ووسم أزرق ووسم رمادي ووسم أخضر). اقرأ الرقم من الوسم المطابق للون الخط أولا. إذا لم يوجد وسم، قدّر السعر من أرقام المحور الأيمن بالتناسب بين أقرب رقمين.\n"
+   + "الخطوط رفيعة وقد تكون متقاربة، فدقّق في الألوان: برتقالي/أصفر غامق = سحب السيولة (orange). أخضر فاتح = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية (blue). أحمر/وردي = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA (اقرأ قيمته عند آخر الشموع أو عند الدخول). أداة الصفقة: المستطيل الأحمر هو منطقة الوقف والأخضر منطقة الهدف، وحدودهما تعطي entry وsl وtp.\n"
+   + "sweep = أعلى سعر وصلت له الذؤابات فوق الخط البرتقالي إذا كان بيعا، أو أدنى سعر تحته إذا كان شراء. dir = sell إذا كانت أداة الصفقة هدفها أسفل الدخول، وإلا buy.\n"
+   + "لا تضع null إلا إذا كان العنصر غير موجود فعلا في الصورة بعد التدقيق. أعد JSON فقط بدون أي شرح، الأرقام أرقام: {\"dir\":\"sell\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}";
   function initPic(){
     if (!window.claude || !window.claude.use) return;
     window.claude.use("sample").then(function(sample){
@@ -335,7 +339,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       $("picGo").addEventListener("click", function(){
         if (!picBlob) return;
         $("picGo").disabled = true; $("picMsg").textContent = "جاري قراءة الصورة...";
-        sample(PROMPT,{images:[picBlob],cache:false}).then(function(r){
+        sample(PROMPT,{images:[picBlob],cache:false,modelTier:"complex"}).then(function(r){
           var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
           var j = JSON.parse(m[0]), n = 0;
           ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
@@ -344,7 +348,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
           if (j.dir === "buy" || j.dir === "sell") S.dir = j.dir;
           S.gClose = ""; S.rClose = ""; S.reach = ""; S.candle = "";
           reload();
-          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة. راجع الأرقام، واكتب يدويًا: سعر الإغلاق، أبعد سعر بعد السحب، ورقم الشمعة.";
+          var miss=["orange","blue","ema","entry","sl","tp"].filter(function(k){return typeof j[k]!=="number"});
+          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+" راجع الأرقام، واكتب يدويًا: سعر الإغلاق، أبعد سعر بعد السحب، ورقم الشمعة.";
         }).catch(function(e){
           $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار.";
         }).then(function(){ $("picGo").disabled = false; });
