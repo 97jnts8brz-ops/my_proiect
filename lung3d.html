@@ -1,0 +1,623 @@
+<title>رئة الإنسان ثلاثية الأبعاد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: full-height 3D stage beside a scrolling anatomy panel; stage sticks on top for phones. */
+:root{
+  --bg:#edf0f3; --surface:#ffffff; --surface2:#e4e9ee; --line:#cfd7df;
+  --fg:#17212b; --muted:#566574; --accent:#b8324f; --accent-soft:#f6d9df; --teal:#17707f;
+  --stage1:#f8fafb; --stage2:#d5dde5; --pill:rgba(255,255,255,.88);
+  --display:'Reem Kufi','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e141b; --surface:#161e28; --surface2:#1f2a36; --line:#2b3947;
+    --fg:#e7edf3; --muted:#93a3b3; --accent:#f0728c; --accent-soft:#3a1d27; --teal:#4cc0d2;
+    --stage1:#223040; --stage2:#0b1017; --pill:rgba(22,30,40,.88); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --surface:#161e28; --surface2:#1f2a36; --line:#2b3947;
+  --fg:#e7edf3; --muted:#93a3b3; --accent:#f0728c; --accent-soft:#3a1d27; --teal:#4cc0d2;
+  --stage1:#223040; --stage2:#0b1017; --pill:rgba(22,30,40,.88); color-scheme:dark;
+}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.7}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);grid-template-areas:"panel stage";min-height:100vh}
+.stage{grid-area:stage;position:sticky;top:0;height:100vh;min-width:0;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 38%,var(--stage1),var(--stage2) 78%)}
+#gl{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:6px;
+  padding:2px 9px 2px 8px;border:1px solid var(--line);border-radius:99px;background:var(--pill);
+  font-size:12px;line-height:1.6;white-space:nowrap;backdrop-filter:blur(4px);transition:opacity .15s}
+.lbl::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.lbl:hover,.lbl.on{border-color:var(--accent);color:var(--accent)}
+.bar{position:absolute;top:14px;inset-inline:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;pointer-events:none}
+.bar>*{pointer-events:auto}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;background:var(--pill);overflow:hidden}
+.seg button{border:0;background:none;padding:5px 13px;font-size:13px}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button:hover{background:var(--surface2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.hint{position:absolute;bottom:12px;inset-inline:16px;text-align:center;font-size:12px;color:var(--muted);pointer-events:none}
+.loadmsg{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);padding:16px;text-align:center}
+
+.panel{grid-area:panel;min-width:0;padding:22px 20px 40px;display:flex;flex-direction:column;gap:18px;border-inline-start:1px solid var(--line);background:var(--bg)}
+.head h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.25;margin:0;text-wrap:balance}
+.head p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.info h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0;line-height:1.3}
+.info .lat{font-family:var(--mono);font-size:12px;color:var(--teal);direction:ltr;text-align:right;display:block;margin-top:2px}
+.info p{margin:10px 0 12px;max-width:62ch}
+.facts{margin:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.facts div{display:grid;grid-template-columns:minmax(0,8.5em) minmax(0,1fr);gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.facts div:last-child{border-bottom:0;padding-bottom:0}
+.facts dt{color:var(--muted);font-size:13px}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.sec h3{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:500;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 12px;font-size:13.5px}
+.chip:hover{border-color:var(--accent)}
+.chip.on,.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:500}
+.groups{display:grid;gap:14px}
+.breath{display:grid;gap:12px}
+.breath .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.state{font-family:var(--display);font-size:22px;color:var(--accent)}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.meter{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--accent))}
+label.sl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+label.sl span{display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:-1px}
+.foot{font-size:12.5px;color:var(--muted)}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "panel"}
+  .stage{height:56vh}
+  .panel{border-inline-start:0;border-top:1px solid var(--line);padding-inline:16px}
+  .head h1{font-size:26px}
+  .hint{display:none}
+}
+</style>
+
+<div class="app" dir="rtl" lang="ar">
+  <section class="stage" id="stage" aria-label="نموذج الرئتين ثلاثي الأبعاد">
+    <canvas id="gl" tabindex="0" aria-label="نموذج ثلاثي الأبعاد للرئتين، اسحب للتدوير"></canvas>
+    <div id="labels"></div>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="زاوية العرض">
+        <button data-view="front" aria-pressed="true">أمامي</button>
+        <button data-view="side" aria-pressed="false">جانبي</button>
+        <button data-view="back" aria-pressed="false">خلفي</button>
+      </div>
+      <div class="seg"><button id="spin" aria-pressed="false">تدوير تلقائي</button></div>
+    </div>
+    <div class="hint">اسحب للتدوير · مرّر للتقريب · اضغط على أي جزء لقراءة تفاصيله</div>
+    <div class="loadmsg" id="loadmsg">جارٍ تحميل النموذج…</div>
+  </section>
+
+  <aside class="panel">
+    <div class="head">
+      <h1>رئة الإنسان ثلاثية الأبعاد</h1>
+      <p>نموذج تعليمي للرئتين والقصبة الهوائية والشعب والحويصلات، يتنفس أمامك.</p>
+    </div>
+
+    <div class="card info" id="info" aria-live="polite"></div>
+
+    <div class="groups sec">
+      <div>
+        <h3>الرئة اليمنى (3 فصوص)</h3>
+        <div class="chips" id="chipsR"></div>
+      </div>
+      <div>
+        <h3>الرئة اليسرى (فصّان)</h3>
+        <div class="chips" id="chipsL"></div>
+      </div>
+      <div>
+        <h3>أجزاء أخرى</h3>
+        <div class="chips" id="chipsO"></div>
+      </div>
+    </div>
+
+    <div class="card breath">
+      <div class="row">
+        <span class="state" id="bstate">شهيق</span>
+        <span class="num"><span id="bvol">0</span> / 500 مل</span>
+      </div>
+      <div class="meter" aria-hidden="true"><i id="bbar"></i></div>
+      <label class="sl" for="rate"><span>معدل التنفس <b id="rateOut" class="num">12 نفساً/دقيقة</b></span>
+        <input type="range" id="rate" min="8" max="30" value="12"></label>
+      <div class="chips"><button class="chip" id="bpause" aria-pressed="false">إيقاف التنفس</button></div>
+    </div>
+
+    <div class="groups sec">
+      <div>
+        <h3>طريقة العرض</h3>
+        <div class="chips">
+          <button class="chip on" id="modeSurf">سطح الرئة</button>
+          <button class="chip" id="modeIn">من الداخل</button>
+        </div>
+        <label class="sl" for="opac" style="margin-top:10px"><span>شفافية الرئتين <b id="opacOut" class="num">100%</b></span>
+          <input type="range" id="opac" min="12" max="100" value="100"></label>
+      </div>
+      <div>
+        <h3>الطبقات</h3>
+        <div class="chips" id="layers"></div>
+      </div>
+      <div class="legend">
+        <span><b style="background:#3f78d4"></b>دم قليل الأكسجين</span>
+        <span><b style="background:#d6403a"></b>دم مؤكسج</span>
+      </div>
+    </div>
+
+    <p class="foot">نموذج مبسّط للتعليم. الأشكال والأحجام تقريبية، والأرقام متوسطات لشخص بالغ سليم، ولا يغني عن استشارة الطبيب.</p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const loadmsg=$('#loadmsg');
+
+/* ---------- Anatomy content ---------- */
+const PARTS={
+ overview:{t:'نظرة عامة',l:'Respiratory system',
+  d:'الرئتان عضوان إسفنجيان داخل القفص الصدري. يدخل الهواء من القصبة الهوائية، ويتفرع في الشعب حتى يصل إلى الحويصلات، وهناك ينتقل الأكسجين إلى الدم ويخرج ثاني أكسيد الكربون. اضغط على أي جزء من النموذج أو اختر من القائمة.',
+  f:[['معدل التنفس','12–20 نفساً في الدقيقة (بالغ في الراحة)'],['الهواء في النفس الهادئ','نحو 500 مل (حجم المد)'],['السعة الكلية','نحو 6 لترات'],['سطح التبادل الغازي','نحو 50–75 م²']]},
+ trachea:{t:'القصبة الهوائية',l:'Trachea',
+  d:'أنبوب يصل الحنجرة بالرئتين. حلقاتها الغضروفية على شكل حرف C تبقيها مفتوحة، وجزؤها الخلفي الرخو يلاصق المريء. تبطّنها خلايا هدبية ومخاط يلتقط الغبار والجراثيم ويدفعها للأعلى.',
+  f:[['الطول','10–12 سم'],['القطر','نحو 2 سم'],['الحلقات الغضروفية','16–20 حلقة'],['نهايتها','تتفرع عند الجؤجؤ (Carina) إلى شعبتين']]},
+ bronchi:{t:'الشعبتان الرئيسيتان',l:'Main bronchi',
+  d:'تتفرع القصبة إلى شعبة يمنى وشعبة يسرى. اليمنى أقصر وأعرض وأكثر عمودية، ولهذا تدخلها الأجسام المستنشقة غالباً. اليسرى أطول وأضيق وأكثر أفقية لأنها تمر تحت قوس الأبهر وفوق القلب.',
+  f:[['الشعبة اليمنى','نحو 2.5 سم قبل أن تتفرع'],['الشعبة اليسرى','نحو 5 سم'],['بعدهما','شعب فصّية: 3 يميناً و2 يساراً'],['شعب قطعية','10 يميناً و8 يساراً تقريباً']]},
+ tree:{t:'الشجرة القصبية',l:'Bronchial tree',
+  d:'تتفرع الشعب نحو 23 مرة تقريباً من القصبة حتى الحويصلات. في الأجيال الأولى جدران غضروفية، وتختفي الغضاريف في القصيبات الصغيرة. أول 16 جيلاً تنقل الهواء فقط ولا يحدث فيها تبادل غازي.',
+  f:[['منطقة التوصيل','الأجيال 0–16'],['منطقة التبادل','الأجيال 17–23'],['الفراغ الميت','نحو 150 مل من كل نفس'],['القصيبات','بلا غضاريف، عضلات ملساء تتحكم بقطرها']]},
+ alveoli:{t:'الحويصلات الهوائية',l:'Alveoli',
+  d:'أكياس صغيرة على أطراف الشجرة القصبية تحيط بها شبكة من الشعيرات الدموية. جدارها بسمك خلية واحدة تقريباً، فينتقل الأكسجين إلى الدم ويخرج ثاني أكسيد الكربون بالانتشار. خلايا النوع الثاني تفرز مادة السيرفاكتانت التي تمنع انطباق الحويصلة.',
+  f:[['العدد','نحو 300–480 مليون'],['القطر','نحو 200–300 ميكرون'],['سمك الحاجز','أقل من 1 ميكرون'],['الحجم في النموذج','مكبّر كثيراً لتراه']]},
+ ru:{t:'الفص العلوي الأيمن',l:'Right upper lobe',
+  d:'يقع فوق الشق الأفقي ويصل إلى قمة الرئة. الرئة اليمنى أكبر من اليسرى لأن القلب يميل إلى اليسار، وفيها شقان: مائل وأفقي.',
+  f:[['الأقسام القطعية','3: قمي وخلفي وأمامي'],['وزن الرئة اليمنى','نحو 620 جم'],['وزن الرئة اليسرى','نحو 570 جم']]},
+ rm:{t:'الفص الأوسط الأيمن',l:'Right middle lobe',
+  d:'أصغر فصوص الرئة اليمنى، يقع بين الشقين الأفقي والمائل ويلاصق الحافة اليمنى للقلب. ليس له مقابل مباشر إلا اللسينة في الرئة اليسرى.',
+  f:[['الأقسام القطعية','2: جانبي وإنسي'],['موقعه','أمامي، فوق الحجاب الحاجز مباشرة']]},
+ rl:{t:'الفص السفلي الأيمن',l:'Right lower lobe',
+  d:'أكبر فصوص الرئة اليمنى. يقع خلف الشق المائل وتحته، ويستند على الحجاب الحاجز. أغلب الهواء المستنشق في الاستلقاء على الظهر يصل إلى أجزائه الخلفية.',
+  f:[['الأقسام القطعية','5: علوي وأربعة قاعدية'],['مجاور','القبة اليمنى للحجاب فوق الكبد']]},
+ lu:{t:'الفص العلوي الأيسر',l:'Left upper lobe',
+  d:'يشمل ما يقابل الفص العلوي والأوسط في اليمين، وأسفله لسان صغير يسمى اللسينة (Lingula). على حافته الأمامية السفلية الشق القلبي الذي يترك مكاناً للقلب.',
+  f:[['الأقسام القطعية','4 منها قسمان للسينة'],['الشقوق','شق مائل واحد فقط'],['ميزة','الشق القلبي (Cardiac notch)']]},
+ ll:{t:'الفص السفلي الأيسر',l:'Left lower lobe',
+  d:'يقع خلف الشق المائل ويستند على الحجاب الحاجز، وهو أكبر من العلوي حجماً عند القاعدة.',
+  f:[['الأقسام القطعية','4 قطع'],['مجاور','القبة اليسرى للحجاب والمعدة']]},
+ heart:{t:'القلب',l:'Heart',
+  d:'يقع في منتصف الصدر ويميل نحوه الأيسر، وهذا سبب غياب الفص الأوسط في اليسار وظهور الشق القلبي. يضخ الدم قليل الأكسجين إلى الرئتين، ويستقبله مؤكسجاً منهما.',
+  f:[['البطين الأيمن','يضخ إلى الشريان الرئوي'],['الأذين الأيسر','يستقبل الأوردة الرئوية'],['المنطقة الدموية','دورة صغرى: قلب ← رئتان ← قلب']]},
+ vessels:{t:'الأوعية الرئوية',l:'Pulmonary vessels',
+  d:'الشريان الرئوي يحمل دماً قليل الأكسجين من القلب إلى الرئتين (الشرايين الوحيدة التي تفعل ذلك)، وأربعة أوردة رئوية تعيد الدم المؤكسج إلى الأذين الأيسر.',
+  f:[['الشريان الرئوي','أزرق في النموذج'],['الأوردة الرئوية','4، حمراء في النموذج'],['ضغط الشريان الرئوي','أقل بكثير من ضغط الأبهر']]},
+ diaphragm:{t:'الحجاب الحاجز',l:'Diaphragm',
+  d:'عضلة قبّية تفصل الصدر عن البطن وهي العضلة الرئيسية للتنفس. عند الشهيق تنقبض فتنزل وتتسع الرئتان، وعند الزفير الهادئ ترتخي فترتفع. تغذّيها العصب الحجابي من الفقرات العنقية 3–5.',
+  f:[['حركته الهادئة','نحو 1.5 سم'],['التنفس العميق','حتى 7–10 سم'],['إسهامه','نحو 70% من جهد الشهيق الهادئ']]}
+};
+const FOCUS={ /* target, camera offset from target */
+ overview:null,
+ trachea:{t:[0,1.4,0],o:[0,0.15,3.0]}, bronchi:{t:[0,0.45,0],o:[0,0.2,3.0]},
+ tree:{t:[0,-0.1,0],o:[0,0.1,5.2]},
+ ru:{t:[-0.95,0.55,0.3],o:[-0.5,0.3,3.4]}, rm:{t:[-1,-0.4,0.4],o:[-0.9,0.1,3.2]}, rl:{t:[-1.1,-0.9,0],o:[-2.3,0.3,3.4]},
+ lu:{t:[1,0.55,0.3],o:[0.5,0.3,3.4]}, ll:{t:[1.1,-0.9,0],o:[2.3,0.3,3.4]},
+ heart:{t:[0.2,-0.3,0.3],o:[0.1,0.1,2.8]}, vessels:{t:[0,0.2,0.2],o:[0,0.3,3.2]}, diaphragm:{t:[0,-1.4,0],o:[0,-0.8,4.0]}
+};
+
+/* chips */
+const mk=(host,id,label)=>{const b=document.createElement('button');b.className='chip';b.dataset.part=id;b.textContent=label;$(host).appendChild(b)};
+mk('#chipsR','ru','الفص العلوي');mk('#chipsR','rm','الفص الأوسط');mk('#chipsR','rl','الفص السفلي');
+mk('#chipsL','lu','الفص العلوي');mk('#chipsL','ll','الفص السفلي');
+[['overview','نظرة عامة'],['trachea','القصبة الهوائية'],['bronchi','الشعبتان'],['tree','الشجرة القصبية'],['alveoli','الحويصلات'],['heart','القلب'],['vessels','الأوعية'],['diaphragm','الحجاب الحاجز']].forEach(a=>mk('#chipsO',a[0],a[1]));
+const LAYERS=[['lungs','الرئتان'],['airways','القصبة والشعبتان'],['tree','الشعب الداخلية'],['alveoli','الحويصلات'],['vessels','الأوعية'],['heart','القلب'],['diaphragm','الحجاب'],['ribs','القفص الصدري'],['labels','التسميات']];
+const layerOn={lungs:1,airways:1,tree:1,alveoli:1,vessels:0,heart:1,diaphragm:1,ribs:0,labels:1};
+LAYERS.forEach(([k,n])=>{const b=document.createElement('button');b.className='chip';b.dataset.layer=k;b.textContent=n;b.setAttribute('aria-pressed',layerOn[k]?'true':'false');$('#layers').appendChild(b)});
+
+/* ---------- Three.js ---------- */
+if(!window.THREE||!THREE.OrbitControls){loadmsg.textContent='تعذّر تحميل مكتبة العرض ثلاثي الأبعاد. أعد تحميل الصفحة.';return}
+const stage=$('#stage'),canvas=$('#gl');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true})}catch(e){loadmsg.textContent='متصفحك لا يدعم WebGL المطلوب لعرض النموذج.';return}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,1,0.05,60);
+scene.add(camera);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=.5;controls.maxDistance=14;controls.screenSpacePanning=true;controls.autoRotateSpeed=1.4;
+
+scene.add(new THREE.HemisphereLight(0xe3ecff,0x6b4a44,.75));
+const key=new THREE.DirectionalLight(0xfff0e4,1.7);key.position.set(3,4,5);camera.add(key);
+const fill=new THREE.DirectionalLight(0xffd6cc,.45);fill.position.set(-4,-2,3);camera.add(fill);
+const rim=new THREE.DirectionalLight(0x9fc0ff,.9);rim.position.set(-4,3,-5);scene.add(rim);
+
+const C=h=>new THREE.Color(h).convertSRGBToLinear();
+const sstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+function bumpTex(){
+  const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+  x.fillStyle='#808080';x.fillRect(0,0,512,512);const r=rng(7);
+  for(let i=0;i<1300;i++){const px=r()*512,py=r()*512,rad=8+r()*16,g=x.createRadialGradient(px,py,0,px,py,rad);
+    g.addColorStop(0,'rgba(255,255,255,.5)');g.addColorStop(.75,'rgba(190,190,190,.25)');g.addColorStop(1,'rgba(50,50,50,.45)');
+    x.fillStyle=g;x.beginPath();x.arc(px,py,rad,0,6.283);x.fill()}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,3);return t;
+}
+const bump=bumpTex();
+
+const root=new THREE.Group();scene.add(root);
+const mats={};            // for highlighting
+const pick=[];            // raycast targets
+
+/* ----- lungs ----- */
+const LOBE_COL=[C('#eaa3a8'),C('#dc8793'),C('#cb7081')];
+function buildLung(s){
+  const g=new THREE.SphereGeometry(1,110,80);g.rotateY(-Math.PI/2);
+  const p=g.attributes.position,n=p.count;
+  const base=new Float32Array(n*3),lobe=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const u=p.getX(i),v=p.getY(i),w=p.getZ(i),t=(v+1)/2;
+    const wx=.78*(.62+.38*Math.pow(1-t,.8)),hz=.78*(.55+.45*Math.pow(1-t,.7));
+    let x=u*wx,y=v*1.5,z=w*hz;
+    const med=sstep(0,.45,-u*s);
+    x*=1-.5*med;
+    y+=.38*(1-Math.min(1,u*u+w*w))*sstep(-.3,-1,v);
+    x+=s*.10*Math.exp(-Math.pow((v-.1)/.28,2))*Math.exp(-Math.pow((w+.05)/.4,2))*med;
+    if(s>0){const nt=Math.exp(-Math.pow((v+.3)/.3,2))*sstep(.1,.7,w)*med;x+=s*.28*nt;z-=.1*nt}
+    const g1=y+.97*z+.226;
+    let L=0;if(g1<0)L=2;else if(s<0&&y<.12)L=1;
+    let d=Math.abs(g1)/1.39;
+    if(s<0&&g1>=0)d=Math.min(d,Math.abs(y-.12)+(1-sstep(-.35,.1,z))*1);
+    const k=1-.07*Math.exp(-Math.pow(d/.05,2));
+    x*=k;y*=k;z*=k;
+    p.setXYZ(i,x,y,z);
+    lobe[i]=L;
+    const nn=.5+.5*Math.sin(x*13+y*7)*Math.sin(z*11-y*9+1.3);
+    const f=(.9+.1*nn)*(1-.35*Math.exp(-Math.pow(d/.06,2)));
+    base[i*3]=LOBE_COL[L].r*f;base[i*3+1]=LOBE_COL[L].g*f;base[i*3+2]=LOBE_COL[L].b*f;
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(base.slice(),3));
+  g.computeVertexNormals();
+  return {g,base,lobe};
+}
+const lungMat=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:.4,clearcoat:.65,clearcoatRoughness:.3,bumpMap:bump,bumpScale:.22,transparent:true,opacity:1,side:THREE.FrontSide});
+const lungs={};
+const LUNG_POS={R:new THREE.Vector3(-.95,-.1,0),L:new THREE.Vector3(.95,-.1,0)};
+
+/* ----- bronchial tree + alveoli (in lung-local coords) ----- */
+const treeMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.5,side:THREE.DoubleSide});
+const alvMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.35});
+const MAXD=7;
+function buildTree(s,start,seed){
+  const r=rng(seed),segs=[],leaves=[];
+  const inside=q=>{const dx=(q.x-s*.16)/.36,dy=q.y/1.08,dz=q.z/.48;return dx*dx+dy*dy+dz*dz<1};
+  const Z=new THREE.Vector3(0,0,1);
+  function perp(d){const a=Math.abs(d.y)<.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);return new THREE.Vector3().crossVectors(d,a).normalize().applyAxisAngle(d,r()*6.283)}
+  function grow(p,d,len,rad,depth,fanAngle){
+    let l=len,e=p.clone().addScaledVector(d,l),tr=0;
+    while(!inside(e)&&tr<4){l*=.6;e=p.clone().addScaledVector(d,l);tr++}
+    if(!inside(e)){leaves.push({p:p.clone(),d:d.clone()});return}
+    segs.push({a:p.clone(),b:e.clone(),r:rad,depth});
+    if(depth>=MAXD||tr>=3){leaves.push({p:e.clone(),d:d.clone()});return}
+    let kids=[];
+    if(depth===0){
+      const angs=s<0?[.85,0,-.85]:[.7,-.7];
+      kids=angs.map((a,i)=>{const c=d.clone().applyAxisAngle(Z,a*s);if(s<0&&i===1)c.z+=.35;return c});
+    }else{
+      const ax=perp(d),a=.5+r()*.25;
+      kids=[d.clone().applyAxisAngle(ax,a),d.clone().applyAxisAngle(ax,-a)];
+    }
+    kids.forEach(c=>{c.y-=.04;c.normalize();grow(e,c,l*(.76+r()*.08),rad*.8,depth+1)});
+  }
+  const d0=new THREE.Vector3(s,-.3,0).normalize();
+  grow(start.clone(),d0,.34,.062,0);
+  /* bronchi instanced */
+  const cyl=new THREE.CylinderGeometry(1,1,1,7,1,false);
+  const bro=new THREE.InstancedMesh(cyl,treeMat,segs.length);
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),sc=new THREE.Vector3(),mid=new THREE.Vector3(),dir=new THREE.Vector3(),col=new THREE.Color();
+  segs.forEach((sg,i)=>{
+    dir.subVectors(sg.b,sg.a);const len=dir.length();dir.normalize();
+    q.setFromUnitVectors(up,dir);mid.addVectors(sg.a,sg.b).multiplyScalar(.5);sc.set(sg.r,len,sg.r);
+    bro.setMatrixAt(i,m.compose(mid,q,sc));
+    col.set('#e8d6b8').lerp(new THREE.Color('#e9a9a0'),sg.depth/MAXD).convertSRGBToLinear();bro.setColorAt(i,col);
+  });
+  bro.userData.part='tree';
+  /* alveoli clusters */
+  const sph=new THREE.SphereGeometry(1,10,8),N=leaves.length*6;
+  const alv=new THREE.InstancedMesh(sph,alvMat,N);let k=0;
+  leaves.forEach(lf=>{
+    for(let j=0;j<6;j++){
+      const o=new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(.07).addScaledVector(lf.d,.025+r()*.03);
+      const rad=.022+r()*.012;
+      alv.setMatrixAt(k,m.compose(lf.p.clone().add(o),q.identity(),sc.set(rad,rad,rad)));
+      col.set('#f2a0ac').lerp(new THREE.Color(j%3===0?'#e0707e':'#f6c1c8'),r()).convertSRGBToLinear();alv.setColorAt(k,col);k++;
+    }
+  });
+  alv.userData.part='alveoli';
+  return {bro,alv,leaves};
+}
+
+const MAIN_END={R:new THREE.Vector3(-.75,.2,-.05),L:new THREE.Vector3(.78,.05,-.05)};
+['R','L'].forEach((side,idx)=>{
+  const s=side==='R'?-1:1;
+  const grp=new THREE.Group();grp.position.copy(LUNG_POS[side]);
+  const lg=buildLung(s);
+  const mesh=new THREE.Mesh(lg.g,lungMat);
+  mesh.userData={part:'lung',side};
+  grp.add(mesh);
+  const tree=buildTree(s,MAIN_END[side].clone().sub(LUNG_POS[side]),side==='R'?11:23);
+  grp.add(tree.bro,tree.alv);
+  root.add(grp);
+  lungs[side]={grp,mesh,lg,s,tree};
+  pick.push(mesh,tree.bro,tree.alv);
+});
+const LOBE_KEY={R:['ru','rm','rl'],L:['lu',null,'ll']};
+
+/* ----- trachea & main bronchi ----- */
+const tracMat=new THREE.MeshStandardMaterial({color:C('#e5b9ad'),roughness:.55,transparent:true,opacity:.92});
+const ringMat=new THREE.MeshStandardMaterial({color:C('#f4ead8'),roughness:.35});
+const airways=new THREE.Group();root.add(airways);
+const tracGrp=new THREE.Group();airways.add(tracGrp);
+const trachea=new THREE.Mesh(new THREE.CylinderGeometry(.155,.155,1.3,28,1,true),new THREE.MeshStandardMaterial({color:C('#e5b9ad'),roughness:.55,side:THREE.DoubleSide}));
+trachea.position.set(0,1.44,-.05);trachea.userData.part='trachea';tracGrp.add(trachea);pick.push(trachea);
+const ringGeo=new THREE.TorusGeometry(.17,.024,8,28,5.2);ringGeo.rotateZ(Math.PI/2-2.6);ringGeo.rotateX(Math.PI/2);
+for(let i=0;i<17;i++){const rg=new THREE.Mesh(ringGeo,ringMat);rg.position.set(0,.82+i*.075,-.05);rg.userData.part='trachea';tracGrp.add(rg);pick.push(rg)}
+const larynx=new THREE.Mesh(new THREE.CylinderGeometry(.2,.17,.3,28),new THREE.MeshStandardMaterial({color:C('#f0e3cf'),roughness:.4}));
+larynx.position.set(0,2.2,-.05);larynx.userData.part='trachea';tracGrp.add(larynx);pick.push(larynx);
+const bronMat=new THREE.MeshStandardMaterial({color:C('#e5b9ad'),roughness:.55});
+const bronGroup=new THREE.Group();airways.add(bronGroup);
+function mainBronchus(end,rad,pts){
+  const c=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.79,-.05),...pts,end]);
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(c,36,rad,12,false),bronMat);tube.userData.part='bronchi';bronGroup.add(tube);pick.push(tube);
+  const rg=new THREE.TorusGeometry(rad+.004,.014,6,18);
+  const Zax=new THREE.Vector3(0,0,1);
+  for(let i=1;i<=9;i++){
+    const t=i/10,pt=c.getPointAt(t),tg=c.getTangentAt(t);
+    const ring=new THREE.Mesh(rg,ringMat);ring.position.copy(pt);ring.quaternion.setFromUnitVectors(Zax,tg);ring.userData.part='bronchi';bronGroup.add(ring);pick.push(ring);
+  }
+}
+mainBronchus(MAIN_END.R,.108,[new THREE.Vector3(-.28,.58,-.05)]);
+mainBronchus(MAIN_END.L,.092,[new THREE.Vector3(.3,.6,-.05),new THREE.Vector3(.58,.3,-.05)]);
+
+/* ----- heart ----- */
+const heartMat=new THREE.MeshStandardMaterial({color:C('#a3303f'),roughness:.5});
+const heartGeo=new THREE.SphereGeometry(1,48,36);
+const hp=heartGeo.attributes.position;
+for(let i=0;i<hp.count;i++){const y=hp.getY(i);const tap=y<0?1+y*.42:1;hp.setX(i,hp.getX(i)*tap);hp.setZ(i,hp.getZ(i)*tap)}
+heartGeo.computeVertexNormals();
+const heart=new THREE.Mesh(heartGeo,heartMat);
+heart.scale.set(.34,.47,.3);heart.rotation.z=.55;heart.position.set(.2,-.38,.22);heart.userData.part='heart';
+root.add(heart);pick.push(heart);
+
+/* ----- vessels ----- */
+const artMat=new THREE.MeshStandardMaterial({color:C('#3f78d4'),roughness:.4});
+const veinMat=new THREE.MeshStandardMaterial({color:C('#d6403a'),roughness:.4});
+const vessels=new THREE.Group();root.add(vessels);
+function vtube(pts,rad,mat){const c=new THREE.CatmullRomCurve3(pts.map(a=>new THREE.Vector3(a[0],a[1],a[2])));const m=new THREE.Mesh(new THREE.TubeGeometry(c,40,rad,10,false),mat);m.userData.part='vessels';vessels.add(m);pick.push(m)}
+vtube([[.17,-.05,.3],[.12,.35,.22],[.08,.56,.12]],.075,artMat);
+vtube([[.08,.56,.12],[-.3,.52,.1],[-.62,.36,.08],[-.82,.24,.12]],.052,artMat);
+vtube([[.08,.56,.12],[.35,.62,.05],[.65,.45,.05],[.86,.2,.1]],.052,artMat);
+vtube([[-.7,.08,.16],[-.42,-.05,.14],[-.1,-.2,.1]],.042,veinMat);
+vtube([[-.72,-.2,-.05],[-.42,-.3,-.05],[-.1,-.32,0]],.042,veinMat);
+vtube([[.7,.04,.16],[.45,-.08,.14],[.15,-.22,.1]],.042,veinMat);
+vtube([[.72,-.2,-.05],[.45,-.3,-.05],[.15,-.32,0]],.042,veinMat);
+
+/* ----- diaphragm ----- */
+const diaMat=new THREE.MeshStandardMaterial({color:C('#b45d58'),roughness:.6,transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false});
+const dia=new THREE.Mesh(new THREE.SphereGeometry(1,48,16,0,Math.PI*2,0,Math.PI/2),diaMat);
+dia.scale.set(1.7,.5,1.0);dia.position.set(0,-1.7,0);dia.userData.part='diaphragm';root.add(dia);pick.push(dia);
+const DIA_Y=-1.7;
+
+/* ----- ribs ----- */
+const ribs=new THREE.Group();root.add(ribs);
+const boneMat=new THREE.MeshStandardMaterial({color:C('#e6dcc6'),roughness:.55,transparent:true,opacity:.6,depthWrite:false});
+for(let i=0;i<10;i++){
+  const y0=1.15-i*.26,sn=Math.sin(Math.PI*(i+1.2)/11.5),A=1.55+.38*sn,B=1+.12*sn;
+  [-1,1].forEach(sd=>{
+    const pts=[];
+    for(let k=0;k<=24;k++){const f=k/24,a=f*Math.PI*.96;pts.push(new THREE.Vector3(sd*A*Math.sin(a),y0-.38*Math.pow(f,1.3),-B*Math.cos(a)))}
+    ribs.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.022,6,false),boneMat));
+  });
+}
+const sternum=new THREE.Mesh(new THREE.BoxGeometry(.2,2.1,.06),boneMat);sternum.position.set(0,.15,1.08);ribs.add(sternum);
+
+/* ---------- Labels ---------- */
+const LBL=[
+ {id:'trachea',n:'القصبة الهوائية',p:[0,1.7,.12],d:[0,0,1],layer:'airways'},
+ {id:'bronchi',n:'الشعبة الرئيسية',p:[-.45,.5,.06],d:[0,0,1],layer:'airways'},
+ {id:'ru',n:'الفص العلوي',p:[-1.05,.75,.5],d:[0,0,1],layer:'lungs'},
+ {id:'rm',n:'الفص الأوسط',p:[-1.08,-.4,.7],d:[0,0,1],layer:'lungs'},
+ {id:'rl',n:'الفص السفلي',p:[-1.55,-1,.3],d:[-1,0,.4],layer:'lungs'},
+ {id:'lu',n:'الفص العلوي',p:[1.05,.75,.5],d:[0,0,1],layer:'lungs'},
+ {id:'ll',n:'الفص السفلي',p:[1.55,-1,.3],d:[1,0,.4],layer:'lungs'},
+ {id:'heart',n:'القلب',p:[.2,-.45,.55],d:[0,0,1],layer:'heart'},
+ {id:'diaphragm',n:'الحجاب الحاجز',p:[1.1,-1.62,.6],d:[0,0,1],layer:'diaphragm'}
+];
+LBL.forEach(l=>{const b=document.createElement('button');b.className='lbl';b.textContent=l.n;b.dataset.part=l.id;$('#labels').appendChild(b);l.el=b;l.v=new THREE.Vector3(...l.p);l.dv=new THREE.Vector3(...l.d).normalize()});
+
+/* ---------- State & UI ---------- */
+let sel='overview',lungOpacity=1,breathing=!window.matchMedia('(prefers-reduced-motion: reduce)').matches,rate=12,phaseAngle=0,ph=0;
+const reduced=!breathing;
+
+function setLayer(k,on){
+  layerOn[k]=on?1:0;
+  const b=document.querySelector('[data-layer="'+k+'"]');if(b)b.setAttribute('aria-pressed',on?'true':'false');
+  ({lungs:()=>['R','L'].forEach(x=>lungs[x].mesh.visible=!!on),
+    airways:()=>airways.visible=!!on,
+    tree:()=>['R','L'].forEach(x=>lungs[x].tree.bro.visible=!!on),
+    alveoli:()=>['R','L'].forEach(x=>lungs[x].tree.alv.visible=!!on),
+    vessels:()=>vessels.visible=!!on,heart:()=>heart.visible=!!on,diaphragm:()=>dia.visible=!!on,ribs:()=>ribs.visible=!!on,
+    labels:()=>$('#labels').style.display=on?'':'none'})[k]();
+}
+Object.keys(layerOn).forEach(k=>setLayer(k,layerOn[k]));
+$('#layers').addEventListener('click',e=>{const b=e.target.closest('[data-layer]');if(b)setLayer(b.dataset.layer,b.getAttribute('aria-pressed')!=='true')});
+
+function setOpacity(v){
+  lungOpacity=v;lungMat.opacity=v;lungMat.depthWrite=v>.97;lungMat.needsUpdate=true;
+  $('#opac').value=Math.round(v*100);$('#opacOut').textContent=Math.round(v*100)+'%';
+  $('#modeSurf').classList.toggle('on',v>.97);$('#modeIn').classList.toggle('on',v<=.4);
+}
+$('#opac').addEventListener('input',e=>setOpacity(e.target.value/100));
+$('#modeSurf').onclick=()=>setOpacity(1);
+$('#modeIn').onclick=()=>setOpacity(.28);
+setOpacity(1);
+
+/* views */
+const aspect=()=>stage.clientWidth/Math.max(1,stage.clientHeight);
+const fitDist=()=>Math.max(4.8/.65,4.2/(.65*aspect()));
+let fly=null;
+function flyTo(pos,tgt){fly={p:pos.clone(),t:tgt.clone()}}
+controls.addEventListener('start',()=>{fly=null});
+function viewPos(name){const d=fitDist(),t=new THREE.Vector3(0,.1,0);
+  const p=name==='front'?new THREE.Vector3(0,.4,d):name==='back'?new THREE.Vector3(0,.4,-d):new THREE.Vector3(d,.4,0);return [p,t]}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+  const [p,t]=viewPos(b.dataset.view);flyTo(p,t);
+  document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+});
+$('#spin').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.setAttribute('aria-pressed',controls.autoRotate?'true':'false')};
+
+/* highlight */
+const HL=new THREE.Color(.34,.12,.14);
+const emissiveMats=[tracMat,bronMat,heartMat,artMat,veinMat,diaMat,treeMat,alvMat,ringMat];
+trachea.material.emissive=trachea.material.emissive||new THREE.Color();
+function highlight(id){
+  emissiveMats.concat([trachea.material]).forEach(m=>{if(m.emissive)m.emissive.setHex(0)});
+  const on=(...ms)=>ms.forEach(m=>m.emissive.copy(HL));
+  if(id==='trachea')on(trachea.material);
+  if(id==='bronchi')on(bronMat);
+  if(id==='heart')on(heartMat);
+  if(id==='vessels')on(artMat,veinMat);
+  if(id==='diaphragm')on(diaMat);
+  if(id==='tree')on(treeMat);
+  if(id==='alveoli')on(alvMat);
+  ['R','L'].forEach(side=>{
+    const L=lungs[side],col=L.lg.g.attributes.color,b=L.lg.base,lobe=L.lg.lobe;
+    const key=LOBE_KEY[side];let target=-1;
+    key.forEach((k,i)=>{if(k===id)target=i});
+    for(let i=0;i<lobe.length;i++){
+      const m=target<0?1:(lobe[i]===target?1.28:.66);
+      col.array[i*3]=b[i*3]*m;col.array[i*3+1]=b[i*3+1]*m;col.array[i*3+2]=b[i*3+2]*m;
+    }
+    col.needsUpdate=true;
+  });
+}
+
+/* info */
+function renderInfo(id){
+  const P=PARTS[id];
+  $('#info').innerHTML='<h2>'+P.t+'</h2><span class="lat">'+P.l+'</span><p>'+P.d+'</p><dl class="facts">'+P.f.map(f=>'<div><dt>'+f[0]+'</dt><dd>'+f[1]+'</dd></div>').join('')+'</dl>';
+}
+function select(id,doFly){
+  sel=id;renderInfo(id);highlight(id);
+  document.querySelectorAll('[data-part]').forEach(b=>{if(b.classList.contains('chip'))b.classList.toggle('on',b.dataset.part===id);if(b.classList.contains('lbl'))b.classList.toggle('on',b.dataset.part===id)});
+  if(id==='tree'||id==='alveoli'){setLayer('tree',1);setLayer('alveoli',1);if(lungOpacity>.4)setOpacity(.28)}
+  if(id==='vessels')setLayer('vessels',1);
+  if(id==='heart')setLayer('heart',1);
+  if(id==='diaphragm')setLayer('diaphragm',1);
+  if(doFly===false)return;
+  if(id==='overview'){const [p,t]=viewPos('front');flyTo(p,t);return}
+  if(id==='alveoli'){
+    const L=lungs.L,lf=L.tree.leaves.slice().sort((a,b)=>a.p.distanceTo(new THREE.Vector3(.3,-.3,.2))-b.p.distanceTo(new THREE.Vector3(.3,-.3,.2)))[0];
+    const tg=lf.p.clone().add(LUNG_POS.L);
+    flyTo(tg.clone().add(new THREE.Vector3(0,.05,.75)),tg);return;
+  }
+  const F=FOCUS[id];if(!F)return;
+  const t=new THREE.Vector3(...F.t),o=new THREE.Vector3(...F.o),a=aspect();
+  o.multiplyScalar(a<1?1+(1-a)*.8:1);
+  flyTo(t.clone().add(o),t);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('.chip[data-part],.lbl[data-part]');if(b)select(b.dataset.part)});
+
+/* breathing UI */
+$('#rate').addEventListener('input',e=>{rate=+e.target.value;$('#rateOut').textContent=rate+' نفساً/دقيقة'});
+const bp=$('#bpause');
+function syncPause(){bp.textContent=breathing?'إيقاف التنفس':'تشغيل التنفس';bp.setAttribute('aria-pressed',breathing?'false':'true')}
+bp.onclick=()=>{breathing=!breathing;syncPause()};syncPause();
+
+/* picking */
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+const visibleObj=o=>{for(;o;o=o.parent)if(!o.visible)return false;return true};
+let down=null;
+canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY}});
+canvas.addEventListener('pointerup',e=>{
+  if(!down)return;const mv=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(mv>5)return;
+  const rc=canvas.getBoundingClientRect();
+  ndc.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);
+  ray.setFromCamera(ndc,camera);
+  let hits=ray.intersectObjects(pick.filter(visibleObj),false);
+  if(!hits.length)return;
+  if(lungOpacity<.6){const inner=hits.filter(h=>h.object.userData.part!=='lung'&&h.object.userData.part!=='diaphragm');if(inner.length)hits=inner}
+  const h=hits[0],part=h.object.userData.part;
+  if(part==='lung'){
+    const side=h.object.userData.side,L=lungs[side],idx=h.face.a,lobe=L.lg.lobe[idx];
+    const k=LOBE_KEY[side][lobe]||LOBE_KEY[side][0];select(k);
+  }else select(part);
+});
+
+/* resize */
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();
+{const [p,t]=viewPos('front');camera.position.copy(p);controls.target.copy(t);controls.update()}
+
+/* loop */
+const clock=new THREE.Clock(),tmp=new THREE.Vector3(),cdir=new THREE.Vector3();
+let uiT=0,first=true;
+function frame(){
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),.05);
+  if(breathing){phaseAngle+=dt*2*Math.PI*rate/60;ph=.5-.5*Math.cos(phaseAngle)}
+  ['R','L'].forEach(x=>lungs[x].grp.scale.set(1+.05*ph,1+.045*ph,1+.06*ph));
+  dia.position.y=DIA_Y-.2*ph;ribs.position.y=.03*ph;ribs.scale.z=1+.03*ph;
+  heart.scale.set(.34,.47,.3);
+  uiT+=dt;
+  if(uiT>.1){uiT=0;
+    $('#bvol').textContent=Math.round(500*ph);$('#bbar').style.width=(ph*100)+'%';
+    $('#bstate').textContent=!breathing?'متوقف':(Math.sin(phaseAngle)>0?'شهيق':'زفير');
+  }
+  if(fly){
+    const k=1-Math.exp(-dt*5);
+    camera.position.lerp(fly.p,k);controls.target.lerp(fly.t,k);
+    if(camera.position.distanceTo(fly.p)<.01&&controls.target.distanceTo(fly.t)<.01)fly=null;
+  }
+  controls.update();
+  renderer.render(scene,camera);
+  /* labels */
+  if(layerOn.labels){
+    const w=stage.clientWidth,h=stage.clientHeight;
+    LBL.forEach(l=>{
+      const vis=layerOn[l.layer]&&(l.layer!=='lungs'||lungOpacity>.45);
+      tmp.copy(l.v);tmp.y+=0;
+      cdir.subVectors(camera.position,tmp).normalize();
+      const facing=cdir.dot(l.dv)>.15;
+      tmp.project(camera);
+      const on=vis&&facing&&tmp.z<1;
+      l.el.style.opacity=on?1:0;l.el.style.pointerEvents=on?'auto':'none';
+      l.el.style.transform='translate('+((tmp.x*.5+.5)*w)+'px,'+((-tmp.y*.5+.5)*h)+'px) translate(-50%,-50%)';
+    });
+  }
+  if(first){first=false;loadmsg.remove()}
+}
+select('overview',false);
+frame();
+})();
+</script>
