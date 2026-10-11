@@ -39,6 +39,8 @@ header p{margin:0;color:var(--muted);font-size:.9rem}
 .seg button[aria-pressed="true"].sell{background:var(--bad-bg);color:var(--bad)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .card.na{opacity:.5}
+label.chk{flex-direction:row;align-items:center;gap:8px;grid-column:1/-1;color:var(--fg);font-size:.85rem}
+label.chk input{width:auto;direction:rtl}
 .grp{display:flex;flex-direction:column;gap:10px}
 .ghead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--surface)}
 .ghead h2{margin:0;font-size:1.05rem}
@@ -118,10 +120,10 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 <script>
 (function(){
   var KEY = "trade-checker-v2";
-  var EXAMPLE = {time:"19:40",orange:"31020.9",sweep:"31056",gTop:"31014",gBot:"31010",gClose:"31008",gClose2:"31005",
+  var EXAMPLE = {time:"19:40",orange:"31020.9",sweep:"31056",gTop:"31014",gBot:"31010",gClose:"31008",gClose2:"31005",gVis:"",rVis:"",
     blue:"30924.4",reach:"30820",rTop:"30938",rBot:"30929",rClose:"30890",rClose2:"30882",ema:"30975",candle:"2",
     entry:"30885",sl:"30940",tp:"30760"};
-  var EMPTY = {time:"",orange:"",sweep:"",gTop:"",gBot:"",gClose:"",gClose2:"",blue:"",reach:"",rTop:"",rBot:"",rClose:"",rClose2:"",ema:"",candle:"",entry:"",sl:"",tp:""};
+  var EMPTY = {time:"",orange:"",sweep:"",gTop:"",gBot:"",gClose:"",gClose2:"",gVis:"",rVis:"",blue:"",reach:"",rTop:"",rBot:"",rClose:"",rClose2:"",ema:"",candle:"",entry:"",sl:"",tp:""};
   var S = Object.assign({}, EXAMPLE);
   try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && typeof saved === "object") S = Object.assign({}, EMPTY, saved); } catch(e){}
 
@@ -138,9 +140,13 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
        var ok=x>o; return {s:ok?"ok":"bad",why:f(x)+" > "+f(o)+" = "+YN(ok)}; }},
     {id:"b2", g:"buy", color:"var(--green)", title:"2) المنطقة الشرائية (الأخضر)",
      rule:"إغلاق شمعتين متتاليتين فوق أعلى المنطقة الخضراء.",
-     fields:[["gTop","أعلى المنطقة"],["gBot","أسفل المنطقة"],["gClose","إغلاق الشمعة الأولى"],["gClose2","إغلاق الشمعة الثانية"]],
-     ev:function(){ var t=num(S.gTop), c=num(S.gClose), c2=num(S.gClose2); if(t==null||c==null||c2==null) return {s:"wait",why:"ناقص أرقام (مطلوب إغلاقين)"};
-       var ok=c>t&&c2>t; return {s:ok?"ok":"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" فوق "+f(t)+" = "+YN(ok)}; }},
+     fields:[["gTop","أعلى المنطقة"],["gBot","أسفل المنطقة"],["gClose","إغلاق الشمعة الأولى"],["gClose2","إغلاق الشمعة الثانية"],["gVis","شمعتان متتاليتان أغلقتا فوق المنطقة (حسب الشارت)","check"]],
+     ev:function(){ var t=num(S.gTop), c=num(S.gClose), c2=num(S.gClose2), vis=S.gVis==="1";
+       var nm = (t!=null&&c!=null&&c2!=null) ? (c>t&&c2>t) : null;
+       if (nm===true) return {s:"ok",why:"إغلاقان "+f(c)+" و"+f(c2)+" فوق "+f(t)};
+       if (vis) return {s:"ok",why:"مؤكد من الشارت: شمعتان متتاليتان أغلقتا فوق المنطقة"};
+       if (nm===false) return {s:"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" ليسا فوق "+f(t)};
+       return {s:"wait",why:"اكتب الإغلاقين أو علّم الخيار"}; }},
     {id:"s1", g:"sell", color:"var(--blue)", title:"3) السيولة الطبيعية (الخط الأزرق)",
      rule:"السعر وصل للخط الأزرق أو نزل تحته.",
      fields:[["blue","مستوى الخط الأزرق"],["reach","أدنى سعر وصله"]],
@@ -148,9 +154,13 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
        var ok=r<=b; return {s:ok?"ok":"bad",why:f(r)+" ≤ "+f(b)+" = "+YN(ok)}; }},
     {id:"s2", g:"sell", color:"var(--red)", title:"4) المنطقة البيعية (الأحمر)",
      rule:"إغلاق شمعتين متتاليتين تحت أسفل المنطقة الحمراء.",
-     fields:[["rTop","أعلى المنطقة"],["rBot","أسفل المنطقة"],["rClose","إغلاق الشمعة الأولى"],["rClose2","إغلاق الشمعة الثانية"]],
-     ev:function(){ var b=num(S.rBot), c=num(S.rClose), c2=num(S.rClose2); if(b==null||c==null||c2==null) return {s:"wait",why:"ناقص أرقام (مطلوب إغلاقين)"};
-       var ok=c<b&&c2<b; return {s:ok?"ok":"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" تحت "+f(b)+" = "+YN(ok)}; }},
+     fields:[["rTop","أعلى المنطقة"],["rBot","أسفل المنطقة"],["rClose","إغلاق الشمعة الأولى"],["rClose2","إغلاق الشمعة الثانية"],["rVis","شمعتان متتاليتان أغلقتا تحت المنطقة (حسب الشارت)","check"]],
+     ev:function(){ var b=num(S.rBot), c=num(S.rClose), c2=num(S.rClose2), vis=S.rVis==="1";
+       var nm = (b!=null&&c!=null&&c2!=null) ? (c<b&&c2<b) : null;
+       if (nm===true) return {s:"ok",why:"إغلاقان "+f(c)+" و"+f(c2)+" تحت "+f(b)};
+       if (vis) return {s:"ok",why:"مؤكد من الشارت: شمعتان متتاليتان أغلقتا تحت المنطقة"};
+       if (nm===false) return {s:"bad",why:"إغلاقان "+f(c)+" و"+f(c2)+" ليسا تحت "+f(b)};
+       return {s:"wait",why:"اكتب الإغلاقين أو علّم الخيار"}; }},
     {id:"time", g:"com", color:"var(--accent)", title:"وقت الدخول (جلسة نيويورك)",
      rule:"الدخول فقط من 16:00 إلى 00:00 بتوقيت السعودية.",
      fields:[["time","وقت الدخول","time"]], now:true,
@@ -190,7 +200,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       var h = '<div class="head"><div class="title"><span class="dot" style="background:'+d.color+'"></span><h2>'+d.title+'</h2></div><span class="pill" id="p-'+d.id+'"></span></div>';
       h += '<p class="rule">'+d.rule+'</p><div class="fields">';
       d.fields.forEach(function(x){
-        h += '<label>'+x[1]+'<input data-k="'+x[0]+'" '+(x[2]==="time"?'type="time"':'inputmode="decimal"')+' value="'+(S[x[0]]||"")+'"></label>';
+        if (x[2]==="check") h += '<label class="chk"><input type="checkbox" data-k="'+x[0]+'"'+(S[x[0]]==="1"?' checked':'')+'>'+x[1]+'</label>';
+        else h += '<label>'+x[1]+'<input data-k="'+x[0]+'" '+(x[2]==="time"?'type="time"':'inputmode="decimal"')+' value="'+(S[x[0]]||"")+'"></label>';
       });
       h += '</div>';
       if (d.now) h += '<div class="row"><button type="button" class="btn" data-now>الوقت الآن (السعودية)</button></div>';
@@ -200,8 +211,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     });
     document.querySelectorAll("#g-buy input,#g-sell input,#g-com input").forEach(function(inp){
       inp.addEventListener("input", function(){
-        S[inp.dataset.k] = inp.value;
-        document.querySelectorAll('input[data-k="'+inp.dataset.k+'"]').forEach(function(o){ if(o!==inp) o.value = inp.value; });
+        S[inp.dataset.k] = inp.type==="checkbox" ? (inp.checked?"1":"") : inp.value;
+        document.querySelectorAll('input[data-k="'+inp.dataset.k+'"]').forEach(function(o){ if(o!==inp && o.type!=="checkbox") o.value = inp.value; });
         update();
       });
     });
@@ -310,8 +321,9 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
    + "الخطوة 1 (tags): انسخ كل الوسوم الملوّنة على المحور الأيمن من الأعلى للأسفل: اللون والرقم كما هو مكتوب. قد يوجد وسمان بنفس اللون، وهذا طبيعي. الوسم الأحمر الأخير أو الأبيض المحاط بإطار غالبا هو سعر السوق الحالي وليس خطا.\n"
    + "الخطوة 2 (final): اربط الوسوم بالخطوط الأفقية الظاهرة بنفس اللون: برتقالي = سحب السيولة orange (إذا وُجد خطان برتقاليان خذ الأعلى). أخضر فاتح قريب من البرتقالي = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية blue (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق أفقي ظاهر). أحمر/وردي مع خط أبيض متقطع = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA، اقرأ قيمته من المحور عند الشمعة التي حدث عندها الكسر. entry وsl وtp من أداة الصفقة إن وُجدت. sweep = أعلى سعر لمسته أي شمعة (أعلى ذؤابة) في الجلسة، وreach = أدنى سعر لمسته أي شمعة (أدنى ذؤابة)، قدّرهما من المحور.\n"
    + "إذا لم يكن لخط وسم، قدّر قيمته بالتناسب بين أقرب رقمين على المحور. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق.\n"
-   + "الخطوة 3 (candles): اقرأ سعر إغلاق آخر 14 شمعة ظاهرة في الشارت من اليسار لليمين بالترتيب الزمني. سعر الإغلاق للشمعة البيضاء (صاعدة) هو أعلى جسمها، وللشمعة الحمراء (هابطة) هو أسفل جسمها، وليس الذؤابة. قدّر الرقم من محور الأسعار.\n"
-   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"candles\":[{\"c\":0}],\"final\":{\"dir\":\"sell\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}}";
+   + "الخطوة 3 (candles): اذكر آخر 14 شمعة مغلقة من اليسار لليمين. استبعد الشمعة الأخيرة عند حافة المحور إن كانت ما زالت تتشكل (تلامس وسم السعر الحالي). لكل شمعة: c = سعر إغلاقها تقريبا (الشمعة البيضاء صاعدة وإغلاقها أعلى جسمها، والحمراء هابطة وإغلاقها أسفل جسمها، وليس الذؤابة). a = true إذا كان إغلاقها (طرف الجسم) فوق الخط العلوي للمنطقة الخضراء بصريا. b = true إذا كان إغلاقها تحت الخط السفلي للمنطقة الحمراء بصريا. احكم بصريا بالنسبة للخطوط لا بالأرقام، لأن الفرق قد يكون صغيرا.\n"
+   + "أضف أيضا في final: price = السعر الحالي من الوسم الأبيض المحاط بإطار إن وُجد، وlastTime = وقت آخر شمعة مغلقة بصيغة HH:MM كما يظهر على المحور الأفقي.\n"
+   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"candles\":[{\"c\":0,\"a\":false,\"b\":false}],\"final\":{\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"reach\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0,\"price\":0,\"lastTime\":\"HH:MM\"}}";
   function initPic(){
     if (!window.claude || !window.claude.use) return;
     window.claude.use("sample").then(function(sample){
@@ -329,22 +341,25 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
         $("picGo").disabled = true; $("picMsg").textContent = "جاري قراءة الصورة...";
         sample(PROMPT,{images:[picBlob],cache:false,modelTier:"complex"}).then(function(r){
           var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
-          var j = JSON.parse(m[0]), n = 0, cand = (j.candles||[]).map(function(x){ return num(x && typeof x==="object" ? x.c : x); }).filter(function(x){return x!=null}); j = j.final || j;
+          var j = JSON.parse(m[0]), n = 0, cand = (j.candles||[]).filter(function(x){ return x && typeof x==="object"; }); j = j.final || j;
           ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
             var v = num(j[k]); if (v != null) { S[k] = String(v); n++; }
           });
                     S.gClose = ""; S.gClose2 = ""; S.rClose = ""; S.rClose2 = ""; S.candle = "";
-          var gt = num(S.gTop), rb = num(S.rBot), bp = null, sp = null;
+          S.gVis = ""; S.rVis = ""; var bp = null, sp = null;
           for (var i = cand.length-2; i >= 0; i--) {
-            if (!bp && gt != null && cand[i] > gt && cand[i+1] > gt) bp = [cand[i], cand[i+1]];
-            if (!sp && rb != null && cand[i] < rb && cand[i+1] < rb) sp = [cand[i], cand[i+1]];
+            if (!bp && cand[i].a === true && cand[i+1].a === true) bp = [cand[i].c, cand[i+1].c];
+            if (!sp && cand[i].b === true && cand[i+1].b === true) sp = [cand[i].c, cand[i+1].c];
           }
-          if (bp) { S.gClose = String(bp[0]); S.gClose2 = String(bp[1]); }
-          if (sp) { S.rClose = String(sp[0]); S.rClose2 = String(sp[1]); }
+          if (bp) { S.gVis = "1"; if (num(bp[0])!=null) S.gClose = String(num(bp[0])); if (num(bp[1])!=null) S.gClose2 = String(num(bp[1])); }
+          if (sp) { S.rVis = "1"; if (num(sp[0])!=null) S.rClose = String(num(sp[0])); if (num(sp[1])!=null) S.rClose2 = String(num(sp[1])); }
+          var extra = "";
+          if (num(S.entry) == null && num(j.price) != null) { S.entry = String(num(j.price)); extra += " سعر الدخول مقدّر من السعر الحالي، عدّله لسعر دخولك الفعلي."; }
+          if (/^\d{1,2}:\d{2}$/.test(String(j.lastTime||""))) { S.time = ("0"+String(j.lastTime)).slice(-5); extra += " الوقت من آخر شمعة في الشارت، تأكد أنه بتوقيت السعودية."; }
           var cm = (bp ? " لقيت شمعتين متتاليتين مغلقتين فوق الأخضر." : "") + (sp ? " لقيت شمعتين متتاليتين مغلقتين تحت الأحمر." : "") + (!bp && !sp ? " ما لقيت شمعتين متتاليتين مغلقتين خلف أي منطقة." : "");
           reload();
           var miss=["orange","blue","ema"].filter(function(k){return num(j[k])==null});
-          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+cm+" راجع الأرقام، واكتب يدويًا: رقم الشمعة والوقت.";
+          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+cm+extra+" راجع الأرقام، واكتب يدويًا: رقم الشمعة والوقت.";
         }).catch(function(e){
           $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار. ("+((e&&(e.code||e.message))||"خطأ")+")";
         }).then(function(){ $("picGo").disabled = false; });
