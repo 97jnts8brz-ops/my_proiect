@@ -60,6 +60,12 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:.85rem;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
 .note{font-size:.78rem;color:var(--muted);margin:0}
+.pic{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.pic h2{font-size:1rem;margin:0}
+.pic img{max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line);align-self:flex-start}
+.pic input[type=file]{direction:rtl;text-align:right;font-family:var(--f-body);font-size:.85rem}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
+.btn[disabled]{opacity:.5;cursor:default}
 .ladder{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .ladder h2{font-size:.95rem;margin:0 0 4px}
 .ladder svg{display:block;width:100%;height:auto}
@@ -77,6 +83,15 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
   <div class="verdict wait" id="verdict" role="status" aria-live="polite">
     <div><b id="vTitle">—</b><small id="vSub"></small></div>
     <div class="count" id="vCount"></div>
+  </div>
+
+  <div class="pic" id="picCard" hidden>
+    <h2>ارفق صورة الشارت</h2>
+    <p class="rule">ارفق لقطة الشارت وأقرأ منها المستويات وأعبّي الحقول. القراءة تقريبية، فراجع الأرقام قبل الاعتماد عليها.</p>
+    <input type="file" id="picFile" accept="image/*">
+    <img id="picPrev" alt="معاينة الشارت" hidden>
+    <div class="row"><button type="button" class="btn main" id="picGo" disabled>اقرأ الصورة وعبّي الحقول</button></div>
+    <p class="note" id="picMsg"></p>
   </div>
 
   <div class="ladder"><h2>خريطة الأسعار (بالمقياس)</h2><div id="ladder"></div></div>
@@ -289,6 +304,53 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
   $("dirSell").addEventListener("click", function(){ S.dir="sell"; reload(); });
   $("example").addEventListener("click", function(){ S=Object.assign({},EXAMPLE); reload(); });
   $("reset").addEventListener("click", function(){ S=Object.assign({},EMPTY,{dir:S.dir}); reload(); });
-  bindTop(); build(); update();
+
+  // image -> fields (uses Claude via the page's sample capability)
+  var picBlob = null;
+  function shrink(file){
+    return new Promise(function(res,rej){
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function(){
+        var k = Math.min(1, 1600/Math.max(img.width,img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        c.toBlob(function(b){ b ? res(b) : rej(new Error("x")); },"image/jpeg",0.88);
+      };
+      img.onerror = rej; img.src = url;
+    });
+  }
+  var PROMPT = "هذه لقطة شارت تداول. استخرج المستويات السعرية من المحور الأيمن بدقة. الألوان: الخط البرتقالي = مستوى سحب السيولة، المنطقة/الخطوط الخضراء = منطقة شراء، الخط الأزرق = السيولة الطبيعية، المنطقة/الخطوط الحمراء = منطقة بيع، الخط الأصفر المنحني = EMA، وأداة الصفقة (مستطيل أحمر/أخضر) تحدد الدخول والوقف والهدف. أعد JSON فقط بدون أي شرح بهذا الشكل، وضع null لأي قيمة غير ظاهرة بوضوح، والأرقام أرقام وليست نصوص: {\"dir\":\"buy|sell|null\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}. sweep = أعلى سعر لمس فوق الخط البرتقالي (أو أدنى سعر تحته إذا كان شراء).";
+  function initPic(){
+    if (!window.claude || !window.claude.use) return;
+    window.claude.use("sample").then(function(sample){
+      if (!sample) return;
+      $("picCard").hidden = false;
+      $("picFile").addEventListener("change", function(){
+        var fl = $("picFile").files[0]; picBlob = null; $("picGo").disabled = true; $("picMsg").textContent = "";
+        if (!fl) { $("picPrev").hidden = true; return; }
+        shrink(fl).then(function(b){
+          picBlob = b; $("picPrev").src = URL.createObjectURL(b); $("picPrev").hidden = false; $("picGo").disabled = false;
+        }).catch(function(){ $("picMsg").textContent = "ما قدرت أقرأ الملف. ارفق صورة PNG أو JPG."; });
+      });
+      $("picGo").addEventListener("click", function(){
+        if (!picBlob) return;
+        $("picGo").disabled = true; $("picMsg").textContent = "جاري قراءة الصورة...";
+        sample(PROMPT,{images:[picBlob],cache:false}).then(function(r){
+          var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
+          var j = JSON.parse(m[0]), n = 0;
+          ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
+            if (typeof j[k] === "number") { S[k] = String(j[k]); n++; }
+          });
+          if (j.dir === "buy" || j.dir === "sell") S.dir = j.dir;
+          S.gClose = ""; S.rClose = ""; S.reach = ""; S.candle = "";
+          reload();
+          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة. راجع الأرقام، واكتب يدويًا: سعر الإغلاق، أبعد سعر بعد السحب، ورقم الشمعة.";
+        }).catch(function(e){
+          $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار.";
+        }).then(function(){ $("picGo").disabled = false; });
+      });
+    }).catch(function(){});
+  }
+  bindTop(); build(); update(); initPic();
 })();
 </script>
