@@ -310,7 +310,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
    + "الخطوة 1 (tags): انسخ كل الوسوم الملوّنة على المحور الأيمن من الأعلى للأسفل: اللون والرقم كما هو مكتوب. قد يوجد وسمان بنفس اللون، وهذا طبيعي. الوسم الأحمر الأخير أو الأبيض المحاط بإطار غالبا هو سعر السوق الحالي وليس خطا.\n"
    + "الخطوة 2 (final): اربط الوسوم بالخطوط الأفقية الظاهرة بنفس اللون: برتقالي = سحب السيولة orange (إذا وُجد خطان برتقاليان خذ الأعلى). أخضر فاتح قريب من البرتقالي = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية blue (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق أفقي ظاهر). أحمر/وردي مع خط أبيض متقطع = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA، اقرأ قيمته من المحور عند الشمعة التي حدث عندها الكسر. entry وsl وtp من أداة الصفقة إن وُجدت. sweep = أعلى سعر لمسته أي شمعة (أعلى ذؤابة) في الجلسة، وreach = أدنى سعر لمسته أي شمعة (أدنى ذؤابة)، قدّرهما من المحور.\n"
    + "إذا لم يكن لخط وسم، قدّر قيمته بالتناسب بين أقرب رقمين على المحور. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق.\n"
-   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"final\":{\"dir\":\"sell\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}}";
+   + "الخطوة 3 (candles): اقرأ سعر إغلاق آخر 14 شمعة ظاهرة في الشارت من اليسار لليمين بالترتيب الزمني. سعر الإغلاق للشمعة البيضاء (صاعدة) هو أعلى جسمها، وللشمعة الحمراء (هابطة) هو أسفل جسمها، وليس الذؤابة. قدّر الرقم من محور الأسعار.\n"
+   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"candles\":[{\"c\":0}],\"final\":{\"dir\":\"sell\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}}";
   function initPic(){
     if (!window.claude || !window.claude.use) return;
     window.claude.use("sample").then(function(sample){
@@ -328,14 +329,22 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
         $("picGo").disabled = true; $("picMsg").textContent = "جاري قراءة الصورة...";
         sample(PROMPT,{images:[picBlob],cache:false,modelTier:"complex"}).then(function(r){
           var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
-          var j = JSON.parse(m[0]), n = 0; j = j.final || j;
+          var j = JSON.parse(m[0]), n = 0, cand = (j.candles||[]).map(function(x){ return num(x && typeof x==="object" ? x.c : x); }).filter(function(x){return x!=null}); j = j.final || j;
           ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
             var v = num(j[k]); if (v != null) { S[k] = String(v); n++; }
           });
                     S.gClose = ""; S.gClose2 = ""; S.rClose = ""; S.rClose2 = ""; S.candle = "";
+          var gt = num(S.gTop), rb = num(S.rBot), bp = null, sp = null;
+          for (var i = cand.length-2; i >= 0; i--) {
+            if (!bp && gt != null && cand[i] > gt && cand[i+1] > gt) bp = [cand[i], cand[i+1]];
+            if (!sp && rb != null && cand[i] < rb && cand[i+1] < rb) sp = [cand[i], cand[i+1]];
+          }
+          if (bp) { S.gClose = String(bp[0]); S.gClose2 = String(bp[1]); }
+          if (sp) { S.rClose = String(sp[0]); S.rClose2 = String(sp[1]); }
+          var cm = (bp ? " لقيت شمعتين متتاليتين مغلقتين فوق الأخضر." : "") + (sp ? " لقيت شمعتين متتاليتين مغلقتين تحت الأحمر." : "") + (!bp && !sp ? " ما لقيت شمعتين متتاليتين مغلقتين خلف أي منطقة." : "");
           reload();
           var miss=["orange","blue","ema"].filter(function(k){return num(j[k])==null});
-          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+" راجع الأرقام، واكتب يدويًا: إغلاق الشمعتين ورقم الشمعة والوقت.";
+          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+cm+" راجع الأرقام، واكتب يدويًا: رقم الشمعة والوقت.";
         }).catch(function(e){
           $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار. ("+((e&&(e.code||e.message))||"خطأ")+")";
         }).then(function(){ $("picGo").disabled = false; });
