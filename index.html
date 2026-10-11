@@ -254,6 +254,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     else if (B.s==="ok"){ cls="ok"; t="تأكيد شراء"; sub="كل شروط الشراء تحققت"; }
     else if (Sx.s==="ok"){ cls="ok"; t="تأكيد بيع"; sub="كل شروط البيع تحققت"; }
     else { cls = (B.s==="wait"||Sx.s==="wait") && !(B.bad.length&&Sx.bad.length) ? "wait" : "bad"; t="لا تدخل"; sub="لا يوجد تأكيد. الشراء "+B.ok+"/5 والبيع "+Sx.ok+"/5"; }
+    var isEx = Object.keys(EXAMPLE).every(function(k){ return S[k] === EXAMPLE[k]; });
+    if (isEx) sub += " (بيانات المثال)";
     v.className="verdict "+cls; $("vTitle").textContent=t; $("vSub").textContent=sub;
     $("vCount").textContent = "شراء "+B.ok+" · بيع "+Sx.ok;
 
@@ -372,6 +374,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       function run(modes){
         if (!picBlob) return;
         busy(true); $("picMsg").textContent = "جاري قراءة الصورة...";
+        S = Object.assign({}, EMPTY, {candle: S.candle}); reload();
         var msgs = [], chain = Promise.resolve();
         modes.forEach(function(mode){
           chain = chain.then(function(){ return readOne(sample, mode); }).then(function(t){ msgs.push(t); reload(); $("picMsg").textContent = msgs.join("\n"); });
