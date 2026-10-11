@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dr. Scent — Oudy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Markazi+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans+Arabic:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#150F0A; --bg2:#1E1510; --ink:#F3E9D9; --soft:rgba(243,233,217,.62);
+  --gold:#D4A965; --gold2:#9C7339; --hair:rgba(243,233,217,.11);
+  --ease:cubic-bezier(.32,.72,0,1);
+  --serif:'Markazi Text','Cormorant Garamond',serif; --latin:'Cormorant Garamond',serif;
+  --sans:'IBM Plex Sans Arabic',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.85;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+
+.eyebrow{display:inline-flex;align-items:center;gap:.55rem;padding:.35rem .95rem;border-radius:999px;font-family:var(--latin);
+  font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;font-weight:500;color:var(--gold);
+  background:rgba(212,169,101,.07);box-shadow:inset 0 0 0 1px rgba(212,169,101,.25)}
+.eyebrow i{width:5px;height:5px;border-radius:50%;background:var(--gold)}
+
+/* nav */
+.nav{position:fixed;top:1.5rem;inset-inline:0;margin-inline:auto;width:max-content;z-index:30;display:flex;align-items:center;gap:1.75rem;
+  padding:.5rem .55rem .5rem 1.5rem;border-radius:999px;background:rgba(21,15,10,.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:inset 0 0 0 1px var(--hair),0 20px 50px -24px rgba(0,0,0,.8)}
+.nav .brand{font-family:var(--latin);font-size:1.05rem;letter-spacing:.3em;font-weight:500}
+.burger{width:42px;height:42px;border-radius:50%;border:0;background:var(--gold);cursor:pointer;position:relative;transition:transform .6s var(--ease)}
+.burger:active{transform:scale(.94)}
+.burger span{position:absolute;inset-inline:13px;height:1.5px;background:var(--bg);border-radius:2px;transition:transform .6s var(--ease)}
+.burger span:nth-child(1){top:16px}.burger span:nth-child(2){top:25px}
+.menu-open .burger span:nth-child(1){transform:translateY(4.5px) rotate(45deg)}
+.menu-open .burger span:nth-child(2){transform:translateY(-4.5px) rotate(-45deg)}
+.overlay{position:fixed;inset:0;z-index:25;display:grid;place-content:center;gap:.5rem;text-align:center;background:rgba(21,15,10,.88);
+  backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
+.menu-open .overlay{opacity:1;pointer-events:auto}
+.overlay a{font-family:var(--serif);font-size:clamp(2.8rem,9vw,5rem);line-height:1.3;transform:translateY(3rem);opacity:0;
+  transition:transform .8s var(--ease),opacity .8s var(--ease)}
+.menu-open .overlay a{transform:none;opacity:1}
+.menu-open .overlay a:nth-child(1){transition-delay:.1s}.menu-open .overlay a:nth-child(2){transition-delay:.17s}.menu-open .overlay a:nth-child(3){transition-delay:.24s}
+
+/* hero: editorial split */
+.hero{min-height:100dvh;display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(2rem,5vw,5rem);align-items:center;padding:8.5rem clamp(1.5rem,6vw,6rem) 6rem}
+.hero h1{font-family:var(--serif);font-weight:600;font-size:clamp(4rem,9.5vw,9rem);line-height:.95;margin:1.75rem 0 1.5rem}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero .latin{font-family:var(--latin);font-style:italic;font-size:clamp(1.1rem,1.8vw,1.5rem);color:var(--soft);letter-spacing:.06em;direction:ltr;text-align:start;display:block;margin-bottom:1.5rem}
+.hero p.lead{max-width:34ch;color:var(--soft);font-size:1.05rem}
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:2.5rem}
+.btn{display:inline-flex;align-items:center;gap:1rem;padding:.5rem .5rem .5rem 1.75rem;border-radius:999px;background:var(--gold);color:var(--bg);font-weight:500;cursor:pointer;border:0;
+  transition:transform .6s var(--ease);box-shadow:0 24px 50px -22px rgba(212,169,101,.55)}
+.btn .dot{width:40px;height:40px;border-radius:50%;background:rgba(21,15,10,.12);display:grid;place-items:center;transition:transform .6s var(--ease)}
+.btn .dot svg{width:16px;height:16px;stroke:var(--bg);fill:none;stroke-width:1.3}
+.btn:hover .dot{transform:translate(-4px,-1px) scale(1.06)}.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}
+.btn.ghost .dot{background:rgba(243,233,217,.08)}.btn.ghost .dot svg{stroke:var(--ink)}
+
+.shell{padding:.5rem;border-radius:2.25rem;background:rgba(243,233,217,.05);box-shadow:inset 0 0 0 1px var(--hair)}
+.core{border-radius:calc(2.25rem - .5rem);overflow:hidden;position:relative;box-shadow:inset 0 1px 1px rgba(255,255,255,.15)}
+.photo{width:100%;aspect-ratio:1/1;object-fit:cover;will-change:transform;transition:transform 1.4s var(--ease)}
+.shell:hover .photo{transform:scale(1.035)}
+.hero .shell{position:relative}
+.stamp{position:absolute;inset-inline-start:1.75rem;bottom:1.75rem;padding:.7rem 1.2rem;border-radius:999px;background:rgba(21,15,10,.55);
+  box-shadow:inset 0 0 0 1px rgba(243,233,217,.18);font-family:var(--latin);letter-spacing:.28em;font-size:.72rem;text-transform:uppercase;color:var(--ink)}
+
+/* ticker */
+.band{border-block:1px solid var(--hair);overflow:hidden;padding:1.2rem 0;direction:ltr}
+.band div{display:flex;gap:3rem;width:max-content;animation:slide 45s linear infinite;font-family:var(--latin);font-size:1.5rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.band span::after{content:"◆";margin-inline-start:3rem;font-size:.55rem;vertical-align:middle;color:var(--gold2)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+section{padding:clamp(6rem,12vw,10rem) clamp(1.5rem,6vw,6rem)}
+.sec-head{max-width:46rem;margin-bottom:4.5rem}
+.sec-head h2{font-family:var(--serif);font-weight:600;font-size:clamp(2.8rem,6vw,5.5rem);line-height:1.05;margin-top:1.25rem}
+.sec-head p{color:var(--soft);margin-top:1.25rem;max-width:42ch}
+
+/* z-axis cascade */
+.cascade{display:grid;grid-template-columns:repeat(3,1fr);gap:0;align-items:start}
+.cascade .shell{transition:transform 1s var(--ease)}
+.cascade .c1{transform:rotate(-2deg) translateY(2rem);z-index:1}
+.cascade .c2{transform:translateY(-1.5rem);margin-inline:-2.5rem;z-index:3}
+.cascade .c3{transform:rotate(3deg) translateY(3.5rem);z-index:2}
+.cascade .shell.in:hover{transform:translateY(-.75rem) rotate(0)}
+.crop{aspect-ratio:3/4;background:url(oudy.jpg) no-repeat;background-size:var(--z) auto;background-position:var(--p)}
+.cap{padding:1.75rem 1.75rem 2rem;background:var(--bg2)}
+.cap .num{font-family:var(--latin);color:var(--gold);letter-spacing:.25em;font-size:.8rem}
+.cap h3{font-family:var(--serif);font-weight:600;font-size:2.2rem;line-height:1.2;margin:.4rem 0 .4rem}
+.cap p{color:var(--soft);font-size:.95rem}
+.c1 .crop{--z:360%;--p:20% 74%}
+.c2 .crop{--z:250%;--p:51% 52%}
+.c3 .crop{--z:300%;--p:10% 4%}
+
+/* order */
+.order{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,5rem);align-items:center}
+.order h2{font-family:var(--serif);font-weight:600;font-size:clamp(2.8rem,6vw,5.5rem);line-height:1.05;margin:1.25rem 0 1.5rem}
+.price{display:flex;align-items:baseline;gap:.6rem;font-family:var(--serif);font-size:clamp(3.4rem,6vw,5.5rem);line-height:1;color:var(--gold)}
+.price small{font-family:var(--sans);font-size:1rem;color:var(--soft)}
+.list{list-style:none;margin:2rem 0}
+.list li{display:flex;gap:.9rem;align-items:center;padding:.9rem 0;border-bottom:1px solid var(--hair);color:var(--soft)}
+.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);flex:none}
+.order .photo{aspect-ratio:4/5;object-position:50% 70%}
+
+footer{padding:3rem clamp(1.5rem,6vw,6rem) 4rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;border-top:1px solid var(--hair);color:var(--soft);font-size:.85rem}
+footer .brand{font-family:var(--latin);letter-spacing:.3em;color:var(--ink)}
+
+.rv{opacity:0;transform:translateY(4rem);filter:blur(10px);transition:transform 1s var(--ease),opacity 1s var(--ease),filter 1s var(--ease);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;filter:none;transform:var(--t,none)}
+.cascade .c1{--t:rotate(-2deg) translateY(2rem)}.cascade .c2{--t:translateY(-1.5rem)}.cascade .c3{--t:rotate(3deg) translateY(3.5rem)}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;filter:none;transform:var(--t,none);transition:none}.band div{animation:none}}
+
+@media (max-width:768px){
+  .hero{grid-template-columns:1fr;padding:7.5rem 1rem 4rem;gap:2.5rem}
+  section{padding:5.5rem 1rem}
+  .cascade,.order{grid-template-columns:1fr}
+  .cascade{gap:1.5rem}
+  .cascade .shell,.cascade .c1,.cascade .c2,.cascade .c3{--t:none;transform:none;margin-inline:0}
+  .cascade .shell.in:hover{transform:none}
+  .nav{gap:1rem;padding-inline-start:1.1rem}
+  footer{padding-inline:1rem}
+}
+</style>
+</head>
+<body>
+
+<header class="nav"><a class="brand" href="#top">DR. SCENT</a>
+  <button class="burger" aria-label="القائمة" aria-expanded="false"><span></span><span></span></button></header>
+<nav class="overlay" aria-label="القائمة الرئيسية"><a href="#top">العطر</a><a href="#details">التفاصيل</a><a href="#order">الطلب</a></nav>
+
+<main id="top">
+  <div class="hero">
+    <div>
+      <span class="eyebrow rv"><i></i> Dr. Scent · Breeze of Joy</span>
+      <h1 class="rv" style="--d:.1s">عود<br>بلون <em>الذهب</em></h1>
+      <span class="latin rv" style="--d:.2s">Oudy — Dr. Scent</span>
+      <p class="lead rv" style="--d:.3s">زجاجة سوداء بغطاء فضي مطفي، تقف بين خشب العود وراتنجه على حجر طبيعي. حضور هادئ ودافئ.</p>
+      <div class="cta-row rv" style="--d:.4s">
+        <a class="btn" href="#order">اطلبه الآن<span class="dot"><svg viewBox="0 0 16 16"><path d="M12 4 4 12M4 5v7h7"/></svg></span></a>
+        <a class="btn ghost" href="#details">اكتشف التفاصيل<span class="dot"><svg viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></svg></span></a>
+      </div>
+    </div>
+    <div class="shell rv" style="--d:.2s"><div class="core">
+      <img class="photo" src="oudy.jpg" alt="عطر Oudy من Dr. Scent بين قطع العود على حجر طبيعي أمام قماش ذهبي">
+      <span class="stamp">Oudy</span>
+    </div></div>
+  </div>
+
+  <div class="band" aria-hidden="true"><div>
+    <span>Oudy</span><span>Dr. Scent</span><span>Breeze of Joy</span><span>Oud</span>
+    <span>Oudy</span><span>Dr. Scent</span><span>Breeze of Joy</span><span>Oud</span>
+  </div></div>
+
+  <section id="details">
+    <div class="sec-head">
+      <span class="eyebrow rv"><i></i> The Details</span>
+      <h2 class="rv" style="--d:.1s">ثلاث لقطات<br>تحكي القصة</h2>
+      <p class="rv" style="--d:.2s">من الخشب الخام إلى الحرير الذهبي، كل عنصر في الصورة اختير ليعطي العطر دفئًا وفخامة.</p>
+    </div>
+    <div class="cascade">
+      <div class="shell c1 rv"><div class="core"><div class="crop"></div>
+        <div class="cap"><span class="num">01</span><h3>العود الخام</h3><p>قطع خشب وراتنج بتدرجات العنبر والبني.</p></div></div></div>
+      <div class="shell c2 rv" style="--d:.12s"><div class="core"><div class="crop"></div>
+        <div class="cap"><span class="num">02</span><h3>الزجاجة السوداء</h3><p>جسم مطفي بشكل مخروطي، وغطاء فضي بسيط.</p></div></div></div>
+      <div class="shell c3 rv" style="--d:.24s"><div class="core"><div class="crop"></div>
+        <div class="cap"><span class="num">03</span><h3>الحرير الذهبي</h3><p>طيات قماش تلتقط الضوء وتعطي المشهد عمقًا.</p></div></div></div>
+    </div>
+  </section>
+
+  <section id="order">
+    <div class="order">
+      <div class="rv">
+        <span class="eyebrow"><i></i> Order</span>
+        <h2>اجعل العود<br>توقيعك</h2>
+        <div class="price">000<small>ر.س</small></div>
+        <ul class="list"><li>عطر أصلي بتغليف كامل</li><li>شحن سريع داخل المملكة</li><li>الدفع عند الاستلام</li></ul>
+        <a class="btn" href="#">أضف إلى السلة<span class="dot"><svg viewBox="0 0 16 16"><path d="M12 4 4 12M4 5v7h7"/></svg></span></a>
+      </div>
+      <div class="shell rv" style="--d:.15s"><div class="core"><img class="photo" src="oudy.jpg" alt=""></div></div>
+    </div>
+  </section>
+</main>
+
+<footer><span class="brand">DR. SCENT</span><span>Oudy — Breeze of Joy</span></footer>
+
+<script>
+const b=document.body,burger=document.querySelector('.burger');
+burger.addEventListener('click',()=>{const o=b.classList.toggle('menu-open');burger.setAttribute('aria-expanded',o)});
+document.querySelectorAll('.overlay a').forEach(a=>a.addEventListener('click',()=>{b.classList.remove('menu-open');burger.setAttribute('aria-expanded',false)}));
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
