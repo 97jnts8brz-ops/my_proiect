@@ -39,6 +39,14 @@ header p{margin:0;color:var(--muted);font-size:.9rem}
 .seg button[aria-pressed="true"].sell{background:var(--bad-bg);color:var(--bad)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .card.na{opacity:.5}
+.grp{display:flex;flex-direction:column;gap:10px}
+.ghead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--surface)}
+.ghead h2{margin:0;font-size:1.05rem}
+.ghead small{display:block;color:var(--muted);font-size:.78rem}
+.ghead.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+.ghead.ok small{color:inherit}
+.ghead.buy h2{color:var(--green)}.ghead.sell h2{color:var(--red)}
+.ghead.ok h2{color:inherit}
 .head{display:flex;align-items:center;gap:10px;justify-content:space-between}
 .title{display:flex;align-items:center;gap:10px;min-width:0}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
@@ -77,7 +85,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 <div class="wrap">
   <header>
     <h1>فاحص الصفقة</h1>
-    <p>عبّي الأرقام من الشارت، والموقع يقول لك الشروط تحققت أو لا. القرار للأرقام فقط.</p>
+    <p>الخط البرتقالي والمنطقة الخضراء للشراء. الخط الأزرق والمنطقة الحمراء للبيع. أي جهة تتحقق شروطها يطلع لك التأكيد.</p>
   </header>
 
   <div class="verdict wait" id="verdict" role="status" aria-live="polite">
@@ -96,113 +104,88 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 
   <div class="ladder"><h2>خريطة الأسعار (بالمقياس)</h2><div id="ladder"></div></div>
 
-  <div class="seg" role="group" aria-label="اتجاه الصفقة">
-    <button type="button" class="buy" id="dirBuy">شراء</button>
-    <button type="button" class="sell" id="dirSell">بيع</button>
-  </div>
-
-  <div id="cards" class="wrap" style="gap:14px"></div>
-
-  <div class="card">
-    <div class="head"><div class="title"><h2>حساب العائد للمخاطرة</h2></div></div>
-    <div class="fields">
-      <label>الدخول<input id="entry" inputmode="decimal"></label>
-      <label>وقف الخسارة<input id="sl" inputmode="decimal"></label>
-      <label>الهدف<input id="tp" inputmode="decimal"></label>
-    </div>
-    <div class="rr">
-      <div><span>المخاطرة (نقطة)</span><b id="rRisk">—</b></div>
-      <div><span>العائد (نقطة)</span><b id="rRew">—</b></div>
-      <div><span>العائد / المخاطرة</span><b id="rRR">—</b></div>
-    </div>
-    <p class="note" id="rNote"></p>
-  </div>
+  <div class="grp" id="g-buy"></div>
+  <div class="grp" id="g-sell"></div>
+  <div class="grp" id="g-com"></div>
 
   <div class="row">
     <button type="button" class="btn" id="example">تحميل مثال (بيع NAS100)</button>
     <button type="button" class="btn" id="reset">تصفير كل الحقول</button>
   </div>
-  <p class="note">الأرقام المحملة أول مرة هي مثال من الشارت وليست صفقتك. الوقت بتوقيت السعودية، والدخول مسموح من 16:00 إلى 00:00.</p>
+  <p class="note">الأرقام المحملة أول مرة مثال وليست صفقتك. الوقت بتوقيت السعودية، والدخول مسموح من 16:00 إلى 00:00.</p>
 </div>
 
 <script>
 (function(){
-  var KEY = "trade-checker-v1";
-  var EXAMPLE = {dir:"sell",time:"17:40",orange:"31013.2",sweep:"31025",gTop:"31010",gBot:"31000",gClose:"",
-    blue:"30950.9",reach:"30890.7",rTop:"30985.9",rBot:"30975",rClose:"30948",ema:"30962",candle:"2",
-    entry:"30937.9",sl:"30985.9",tp:"30778.8"};
-  var EMPTY = {dir:"sell",time:"",orange:"",sweep:"",gTop:"",gBot:"",gClose:"",blue:"",reach:"",rTop:"",rBot:"",rClose:"",ema:"",candle:"",entry:"",sl:"",tp:""};
+  var KEY = "trade-checker-v2";
+  var EXAMPLE = {time:"19:40",orange:"31020.9",sweep:"31056",gTop:"31014",gBot:"31010",gClose:"31008",
+    blue:"30924.4",reach:"30820",rTop:"30938",rBot:"30929",rClose:"30890",ema:"30975",candle:"2",
+    entry:"30885",sl:"30940",tp:"30760"};
+  var EMPTY = {time:"",orange:"",sweep:"",gTop:"",gBot:"",gClose:"",blue:"",reach:"",rTop:"",rBot:"",rClose:"",ema:"",candle:"",entry:"",sl:"",tp:""};
   var S = Object.assign({}, EXAMPLE);
-  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && saved.dir) S = Object.assign({}, EMPTY, saved); } catch(e){}
+  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && typeof saved === "object") S = Object.assign({}, EMPTY, saved); } catch(e){}
 
   var $ = function(id){ return document.getElementById(id); };
   var num = function(v){ if (v === "" || v == null) return null; var n = parseFloat(String(v).replace(/,/g,"")); return isNaN(n) ? null : n; };
   var f = function(n){ return n.toLocaleString("en-US",{maximumFractionDigits:2}); };
+  var YN = function(b){ return b ? "نعم" : "لا"; };
 
-  // card definitions: fields + evaluator (returns {s:'ok'|'bad'|'wait'|'na', why:''})
-  function defs(){
-    var buy = S.dir === "buy";
-    return [
-      {id:"time", color:"var(--accent)", title:"وقت الدخول (جلسة نيويورك)",
-       rule:"الدخول فقط من 16:00 إلى 00:00 بتوقيت السعودية.",
-       fields:[["time","وقت الدخول","time"]], now:true,
-       ev:function(){
-         if (!S.time) return {s:"wait",why:"اكتب الوقت أو اضغط الآن"};
-         var p = S.time.split(":"), m = (+p[0])*60 + (+p[1]);
-         var ok = m >= 960 && m <= 1439;
-         return {s:ok?"ok":"bad", why:S.time + (ok ? " داخل الجلسة" : " خارج الجلسة")};
-       }},
-      {id:"c1", color:"var(--orange)", title:"1) سحب السيولة (الخط البرتقالي)",
-       rule: buy ? "للشراء: السعر نزل تحت الخط البرتقالي (سحب سيولة بيعية)." : "للبيع: السعر صعد فوق الخط البرتقالي (سحب سيولة شرائية).",
-       fields:[["orange","مستوى الخط البرتقالي"],["sweep", buy ? "أدنى سعر وصله" : "أعلى سعر وصله"]],
-       ev:function(){
-         var o=num(S.orange), x=num(S.sweep); if(o==null||x==null) return {s:"wait",why:"ناقص أرقام"};
-         var ok = buy ? x < o : x > o;
-         return {s:ok?"ok":"bad", why:f(x)+(buy?" < ":" > ")+f(o)+" = "+(ok?"نعم":"لا")};
-       }},
-      {id:"c2", color:"var(--green)", title:"2) المنطقة الشرائية (الأخضر)", only:"buy",
-       rule:"للشراء فقط: إغلاق شمعة فوق أعلى المنطقة الخضراء.",
-       fields:[["gTop","أعلى المنطقة"],["gBot","أسفل المنطقة"],["gClose","سعر إغلاق الشمعة"]],
-       ev:function(){
-         var t=num(S.gTop), c=num(S.gClose); if(t==null||c==null) return {s:"wait",why:"ناقص أرقام"};
-         var ok = c > t; return {s:ok?"ok":"bad", why:"إغلاق "+f(c)+" > "+f(t)+" = "+(ok?"نعم":"لا")};
-       }},
-      {id:"c3", color:"var(--blue)", title:"3) السيولة الطبيعية (الخط الأزرق)",
-       rule: buy ? "للشراء: السعر وصل للخط الأزرق أو تجاوزه للأعلى." : "للبيع: السعر وصل للخط الأزرق أو كسره للأسفل.",
-       fields:[["blue","مستوى الخط الأزرق"],["reach", buy ? "أعلى سعر بعد السحب" : "أدنى سعر بعد السحب"]],
-       ev:function(){
-         var b=num(S.blue), r=num(S.reach); if(b==null||r==null) return {s:"wait",why:"ناقص أرقام"};
-         var ok = buy ? r >= b : r <= b;
-         return {s:ok?"ok":"bad", why:f(r)+(buy?" ≥ ":" ≤ ")+f(b)+" = "+(ok?"نعم":"لا")};
-       }},
-      {id:"c4", color:"var(--red)", title:"4) المنطقة البيعية (الأحمر)", only:"sell",
-       rule:"للبيع فقط: إغلاق شمعة تحت أسفل المنطقة الحمراء.",
-       fields:[["rTop","أعلى المنطقة"],["rBot","أسفل المنطقة"],["rClose","سعر إغلاق الشمعة"]],
-       ev:function(){
-         var b=num(S.rBot), c=num(S.rClose); if(b==null||c==null) return {s:"wait",why:"ناقص أرقام"};
-         var ok = c < b; return {s:ok?"ok":"bad", why:"إغلاق "+f(c)+" < "+f(b)+" = "+(ok?"نعم":"لا")};
-       }},
-      {id:"c5", color:"var(--muted)", title:"5) موقع EMA من الصفقة",
-       rule: buy ? "للشراء: EMA تحت سعر الدخول." : "للبيع: EMA فوق سعر الدخول.",
-       fields:[["ema","قيمة EMA"]],
-       ev:function(){
-         var e=num(S.ema), en=num(S.entry); if(e==null||en==null) return {s:"wait",why:"ناقص EMA أو سعر الدخول"};
-         var ok = buy ? e < en : e > en;
-         return {s:ok?"ok":"bad", why:"EMA "+f(e)+(buy?" < ":" > ")+"دخول "+f(en)+" = "+(ok?"نعم":"لا")};
-       }},
-      {id:"c6", color:"var(--muted)", title:"6) شمعة الدخول",
-       rule:"الدخول من الشمعة الثانية بعد شمعة الإغلاق (الأولى هي شمعة الإغلاق نفسها).",
-       fields:[["candle","رقم الشمعة بعد الإغلاق"]],
-       ev:function(){
-         var c=num(S.candle); if(c==null) return {s:"wait",why:"اكتب رقم الشمعة"};
-         var ok = c === 2; return {s:ok?"ok":"bad", why:ok ? "الشمعة الثانية" : "الشمعة رقم "+c+" (المطلوب 2)"};
-       }}
-    ];
+  var DEFS = [
+    {id:"b1", g:"buy", color:"var(--orange)", title:"1) سحب السيولة (الخط البرتقالي)",
+     rule:"السعر وصل فوق الخط البرتقالي.",
+     fields:[["orange","مستوى الخط البرتقالي"],["sweep","أعلى سعر وصله"]],
+     ev:function(){ var o=num(S.orange), x=num(S.sweep); if(o==null||x==null) return {s:"wait",why:"ناقص أرقام"};
+       var ok=x>o; return {s:ok?"ok":"bad",why:f(x)+" > "+f(o)+" = "+YN(ok)}; }},
+    {id:"b2", g:"buy", color:"var(--green)", title:"2) المنطقة الشرائية (الأخضر)",
+     rule:"إغلاق شمعة فوق أعلى المنطقة الخضراء.",
+     fields:[["gTop","أعلى المنطقة"],["gBot","أسفل المنطقة"],["gClose","سعر إغلاق الشمعة"]],
+     ev:function(){ var t=num(S.gTop), c=num(S.gClose); if(t==null||c==null) return {s:"wait",why:"ناقص أرقام"};
+       var ok=c>t; return {s:ok?"ok":"bad",why:"إغلاق "+f(c)+" > "+f(t)+" = "+YN(ok)}; }},
+    {id:"s1", g:"sell", color:"var(--blue)", title:"3) السيولة الطبيعية (الخط الأزرق)",
+     rule:"السعر وصل للخط الأزرق أو نزل تحته.",
+     fields:[["blue","مستوى الخط الأزرق"],["reach","أدنى سعر وصله"]],
+     ev:function(){ var b=num(S.blue), r=num(S.reach); if(b==null||r==null) return {s:"wait",why:"ناقص أرقام"};
+       var ok=r<=b; return {s:ok?"ok":"bad",why:f(r)+" ≤ "+f(b)+" = "+YN(ok)}; }},
+    {id:"s2", g:"sell", color:"var(--red)", title:"4) المنطقة البيعية (الأحمر)",
+     rule:"إغلاق شمعة تحت أسفل المنطقة الحمراء.",
+     fields:[["rTop","أعلى المنطقة"],["rBot","أسفل المنطقة"],["rClose","سعر إغلاق الشمعة"]],
+     ev:function(){ var b=num(S.rBot), c=num(S.rClose); if(b==null||c==null) return {s:"wait",why:"ناقص أرقام"};
+       var ok=c<b; return {s:ok?"ok":"bad",why:"إغلاق "+f(c)+" < "+f(b)+" = "+YN(ok)}; }},
+    {id:"time", g:"com", color:"var(--accent)", title:"وقت الدخول (جلسة نيويورك)",
+     rule:"الدخول فقط من 16:00 إلى 00:00 بتوقيت السعودية.",
+     fields:[["time","وقت الدخول","time"]], now:true,
+     ev:function(){ if(!S.time) return {s:"wait",why:"اكتب الوقت أو اضغط الآن"};
+       var p=S.time.split(":"), m=(+p[0])*60+(+p[1]), ok=m>=960&&m<=1439;
+       return {s:ok?"ok":"bad",why:S.time+(ok?" داخل الجلسة":" خارج الجلسة")}; }},
+    {id:"candle", g:"com", color:"var(--muted)", title:"شمعة الدخول",
+     rule:"الدخول من الشمعة الثانية بعد شمعة الإغلاق.",
+     fields:[["candle","رقم الشمعة بعد الإغلاق"]],
+     ev:function(){ var c=num(S.candle); if(c==null) return {s:"wait",why:"اكتب رقم الشمعة"};
+       var ok=c===2; return {s:ok?"ok":"bad",why:ok?"الشمعة الثانية":"الشمعة رقم "+c+" (المطلوب 2)"}; }},
+    {id:"ema", g:"com", color:"var(--muted)", title:"موقع EMA من الصفقة",
+     rule:"للشراء EMA تحت سعر الدخول. للبيع EMA فوق سعر الدخول.",
+     fields:[["ema","قيمة EMA"],["entry","سعر الدخول"]],
+     ev:function(){ var e=num(S.ema), en=num(S.entry); if(e==null||en==null) return {s:"wait",why:"ناقص EMA أو سعر الدخول"};
+       return {s:"ok",why:e<en?"EMA تحت الدخول: يناسب الشراء":(e>en?"EMA فوق الدخول: يناسب البيع":"EMA عند الدخول: لا يناسب أيًا منهما")}; }},
+    {id:"pos", g:"com", color:"var(--muted)", title:"الوقف والهدف والعائد للمخاطرة",
+     rule:"معلومة للحساب فقط ولا تدخل في التأكيد.",
+     fields:[["sl","وقف الخسارة"],["tp","الهدف"]], rr:true,
+     ev:function(){ return {s:"na",why:""}; }}
+  ];
+
+  function emaCheck(dir){
+    var e=num(S.ema), en=num(S.entry); if(e==null||en==null) return {s:"wait",why:"EMA"};
+    var ok = dir==="buy" ? e<en : e>en; return {s:ok?"ok":"bad",why:"EMA"};
   }
 
   function build(){
-    var host = $("cards"); host.innerHTML = "";
-    defs().forEach(function(d){
+    ["buy","sell","com"].forEach(function(g){ $("g-"+g).innerHTML = ""; });
+    var heads = {
+      buy:'<div class="ghead buy" id="h-buy"><div><h2>شراء</h2><small id="hs-buy"></small></div><span class="pill" id="hp-buy"></span></div>',
+      sell:'<div class="ghead sell" id="h-sell"><div><h2>بيع</h2><small id="hs-sell"></small></div><span class="pill" id="hp-sell"></span></div>',
+      com:'<div class="ghead" id="h-com"><div><h2>شروط مشتركة</h2><small>تنطبق على الشراء والبيع</small></div></div>'};
+    ["buy","sell","com"].forEach(function(g){ $("g-"+g).innerHTML = heads[g]; });
+    DEFS.forEach(function(d){
       var card = document.createElement("div"); card.className = "card"; card.id = "card-"+d.id;
       var h = '<div class="head"><div class="title"><span class="dot" style="background:'+d.color+'"></span><h2>'+d.title+'</h2></div><span class="pill" id="p-'+d.id+'"></span></div>';
       h += '<p class="rule">'+d.rule+'</p><div class="fields">';
@@ -211,24 +194,71 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       });
       h += '</div>';
       if (d.now) h += '<div class="row"><button type="button" class="btn" data-now>الوقت الآن (السعودية)</button></div>';
+      if (d.rr) h += '<div class="rr"><div><span>المخاطرة (نقطة)</span><b id="rRisk">—</b></div><div><span>العائد (نقطة)</span><b id="rRew">—</b></div><div><span>العائد / المخاطرة</span><b id="rRR">—</b></div></div><p class="note" id="rNote"></p>';
       h += '<p class="why" id="w-'+d.id+'"></p>';
-      card.innerHTML = h; host.appendChild(card);
+      card.innerHTML = h; $("g-"+d.g).appendChild(card);
     });
-    host.querySelectorAll("input").forEach(function(inp){
-      inp.addEventListener("input", function(){ S[inp.dataset.k] = inp.value; update(); });
+    document.querySelectorAll("#g-buy input,#g-sell input,#g-com input").forEach(function(inp){
+      inp.addEventListener("input", function(){
+        S[inp.dataset.k] = inp.value;
+        document.querySelectorAll('input[data-k="'+inp.dataset.k+'"]').forEach(function(o){ if(o!==inp) o.value = inp.value; });
+        update();
+      });
     });
-    var nb = host.querySelector("[data-now]");
+    var nb = document.querySelector("[data-now]");
     if (nb) nb.addEventListener("click", function(){
       var t = new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Riyadh",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
-      S.time = t; host.querySelector('[data-k="time"]').value = t; update();
+      S.time = t; document.querySelector('[data-k="time"]').value = t; update();
     });
   }
 
-  var LBL = {ok:"محقق", bad:"غير محقق", wait:"ناقص", na:"لا ينطبق"};
+  var LBL = {ok:"محقق", bad:"غير محقق", wait:"ناقص", na:"معلومة"};
+  var SLBL = {ok:"مؤكد", bad:"غير مؤكد", wait:"ناقص"};
 
+  function setup(dir, R){
+    var ids = dir==="buy" ? ["b1","b2"] : ["s1","s2"];
+    var parts = [R[ids[0]], R[ids[1]], R.time, R.candle, emaCheck(dir)];
+    var names = [DEFS.filter(function(d){return d.id===ids[0]})[0].title, DEFS.filter(function(d){return d.id===ids[1]})[0].title, "الوقت", "شمعة الدخول", "موقع EMA"];
+    var ok=0, bad=[], wait=0;
+    parts.forEach(function(r,i){ if(r.s==="ok") ok++; else if(r.s==="bad") bad.push(names[i]); else wait++; });
+    var s = bad.length ? "bad" : (wait ? "wait" : "ok");
+    return {s:s, ok:ok, bad:bad, wait:wait};
+  }
+
+  function update(){
+    var R = {};
+    DEFS.forEach(function(d){
+      var r = d.ev(); R[d.id] = r;
+      $("p-"+d.id).className = "pill "+r.s; $("p-"+d.id).textContent = LBL[r.s]; $("w-"+d.id).textContent = r.why;
+    });
+    var B = setup("buy",R), Sx = setup("sell",R);
+    [["buy",B],["sell",Sx]].forEach(function(x){
+      var k=x[0], o=x[1];
+      $("h-"+k).classList.toggle("ok", o.s==="ok");
+      $("hp-"+k).className = "pill "+o.s; $("hp-"+k).textContent = SLBL[o.s];
+      $("hs-"+k).textContent = o.ok+" / 5"+(o.bad.length ? " · غير محقق: "+o.bad[0] : (o.wait ? " · باقي "+o.wait+" ناقص" : ""));
+    });
+    var v=$("verdict"), cls, t, sub;
+    if (B.s==="ok" && Sx.s==="ok"){ cls="bad"; t="تعارض: لا تدخل"; sub="شروط الشراء والبيع محققة معا، راجع الأرقام"; }
+    else if (B.s==="ok"){ cls="ok"; t="تأكيد شراء"; sub="كل شروط الشراء تحققت"; }
+    else if (Sx.s==="ok"){ cls="ok"; t="تأكيد بيع"; sub="كل شروط البيع تحققت"; }
+    else { cls = (B.s==="wait"||Sx.s==="wait") && !(B.bad.length&&Sx.bad.length) ? "wait" : "bad"; t="لا تدخل"; sub="لا يوجد تأكيد. الشراء "+B.ok+"/5 والبيع "+Sx.ok+"/5"; }
+    v.className="verdict "+cls; $("vTitle").textContent=t; $("vSub").textContent=sub;
+    $("vCount").textContent = "شراء "+B.ok+" · بيع "+Sx.ok;
+
+    var en=num(S.entry), sl=num(S.sl), tp=num(S.tp), note="";
+    var risk = en!=null&&sl!=null ? Math.abs(en-sl) : null, rew = en!=null&&tp!=null ? Math.abs(tp-en) : null;
+    $("rRisk").textContent = risk!=null ? f(risk) : "—";
+    $("rRew").textContent = rew!=null ? f(rew) : "—";
+    $("rRR").textContent = risk&&rew!=null ? "1 : "+(rew/risk).toFixed(2) : "—";
+    if (en!=null&&sl!=null&&tp!=null && ((sl<en)===(tp<en))) note = "تنبيه: الوقف والهدف في نفس الجهة من سعر الدخول.";
+    $("rNote").textContent = note;
+    ladder();
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  }
 
   function ladder(){
-    var buy = S.dir==="buy", L=[], Z=[];
+    var L=[], Z=[];
     function add(k,label,color,dash){ var v=num(S[k]); if(v!=null) L.push({v:v,label:label,color:color,dash:dash}); }
     function zone(a,b,label,color){ var x=num(S[a]), y=num(S[b]); if(x!=null&&y!=null) Z.push({hi:Math.max(x,y),lo:Math.min(x,y),label:label,color:color}); }
     add("orange","سحب السيولة","var(--orange)");
@@ -237,7 +267,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     add("entry","دخول","var(--fg)");
     add("sl","وقف","var(--bad)",true);
     add("tp","هدف","var(--ok)",true);
-    if(buy) zone("gTop","gBot","منطقة شراء","var(--green)"); else zone("rTop","rBot","منطقة بيع","var(--red)");
+    zone("gTop","gBot","منطقة شراء","var(--green)");
+    zone("rTop","rBot","منطقة بيع","var(--red)");
     var vals=L.map(function(x){return x.v}).concat(Z.reduce(function(a,z){return a.concat([z.hi,z.lo])},[]));
     var host=$("ladder");
     if(vals.length<2){ host.innerHTML='<p class="empty">اكتب مستويين أو أكثر وتظهر الخريطة هنا.</p>'; return; }
@@ -258,54 +289,10 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     host.innerHTML=out+'</svg>';
   }
 
-  function update(){
-    var buy = S.dir === "buy";
-    $("dirBuy").setAttribute("aria-pressed", buy);
-    $("dirSell").setAttribute("aria-pressed", !buy);
-    var total=0, ok=0, bad=0, wait=0, firstBad="";
-    defs().forEach(function(d){
-      var card=$("card-"+d.id), pill=$("p-"+d.id), why=$("w-"+d.id);
-      var applies = !d.only || d.only === S.dir;
-      card.classList.toggle("na", !applies);
-      card.hidden = !applies;
-      if (!applies) return;
-      var r = d.ev(); total++;
-      if (r.s==="ok") ok++; else if (r.s==="bad"){ bad++; if(!firstBad) firstBad=d.title; } else wait++;
-      pill.className = "pill "+r.s; pill.textContent = LBL[r.s]; why.textContent = r.why;
-    });
-    var v=$("verdict"), cls, t, sub;
-    if (bad>0){ cls="bad"; t="لا تدخل"; sub="شرط غير محقق: "+firstBad; }
-    else if (wait>0){ cls="wait"; t="لا تدخل بعد"; sub="باقي "+wait+" شرط ناقص أو بدون أرقام"; }
-    else { cls="ok"; t = buy ? "الدخول مسموح: شراء" : "الدخول مسموح: بيع"; sub="كل الشروط تحققت"; }
-    v.className="verdict "+cls; $("vTitle").textContent=t; $("vSub").textContent=sub; $("vCount").textContent=ok+" / "+total;
-
-    var en=num(S.entry), sl=num(S.sl), tp=num(S.tp), note="";
-    var risk = en!=null&&sl!=null ? Math.abs(en-sl) : null, rew = en!=null&&tp!=null ? Math.abs(tp-en) : null;
-    $("rRisk").textContent = risk!=null ? f(risk) : "—";
-    $("rRew").textContent = rew!=null ? f(rew) : "—";
-    $("rRR").textContent = risk&&rew!=null ? "1 : "+(rew/risk).toFixed(2) : "—";
-    if (en!=null && sl!=null && (buy ? sl>=en : sl<=en)) note = "تنبيه: وقف الخسارة في الجهة الخطأ لاتجاه "+(buy?"الشراء":"البيع")+".";
-    else if (en!=null && tp!=null && (buy ? tp<=en : tp>=en)) note = "تنبيه: الهدف في الجهة الخطأ لاتجاه "+(buy?"الشراء":"البيع")+".";
-    $("rNote").textContent = note;
-    ladder();
-    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
-  }
-
-  function bindTop(){
-    ["entry","sl","tp"].forEach(function(k){
-      var el=$(k); el.value = S[k]||"";
-      el.addEventListener("input", function(){ S[k]=el.value; update(); });
-    });
-  }
-  function reload(){
-    build(); ["entry","sl","tp"].forEach(function(k){ $(k).value = S[k]||""; }); update();
-  }
-  $("dirBuy").addEventListener("click", function(){ S.dir="buy"; reload(); });
-  $("dirSell").addEventListener("click", function(){ S.dir="sell"; reload(); });
+  function reload(){ build(); update(); }
   $("example").addEventListener("click", function(){ S=Object.assign({},EXAMPLE); reload(); });
-  $("reset").addEventListener("click", function(){ S=Object.assign({},EMPTY,{dir:S.dir}); reload(); });
+  $("reset").addEventListener("click", function(){ S=Object.assign({},EMPTY); reload(); });
 
-  // image -> fields (uses Claude via the page's sample capability)
   var picBlob = null;
   function shrink(file){
     return new Promise(function(res,rej){
@@ -321,8 +308,8 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
   }
   var PROMPT = "أنت تقرأ لقطة شاشة من TradingView (شارت NAS100 أو XAUUSD). اعمل خطوتين وأعد JSON واحد فقط بلا أي نص خارجه.\n"
    + "الخطوة 1 (tags): انسخ كل الوسوم الملوّنة على المحور الأيمن من الأعلى للأسفل: اللون والرقم كما هو مكتوب. قد يوجد وسمان بنفس اللون، وهذا طبيعي. الوسم الأحمر الأخير أو الأبيض المحاط بإطار غالبا هو سعر السوق الحالي وليس خطا.\n"
-   + "الخطوة 2 (final): اربط الوسوم بالخطوط الأفقية الظاهرة بنفس اللون: برتقالي = سحب السيولة orange (إذا وُجد خطان برتقاليان خذ الأعلى). أخضر فاتح قريب من البرتقالي = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية blue (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق أفقي ظاهر). أحمر/وردي مع خط أبيض متقطع = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA، اقرأ قيمته من المحور عند الشمعة التي حدث عندها الكسر. entry وsl وtp من أداة الصفقة إن وُجدت. sweep = أعلى قمة وصلت لها ذؤابة فوق الخط البرتقالي إن كان بيعا، أو أدنى قاع تحته إن كان شراء، قدّرها من المحور.\n"
-   + "إذا لم يكن لخط وسم، قدّر قيمته بالتناسب بين أقرب رقمين على المحور. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق. dir = sell أو buy حسب اتجاه الحركة بعد السحب.\n"
+   + "الخطوة 2 (final): اربط الوسوم بالخطوط الأفقية الظاهرة بنفس اللون: برتقالي = سحب السيولة orange (إذا وُجد خطان برتقاليان خذ الأعلى). أخضر فاتح قريب من البرتقالي = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية blue (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق أفقي ظاهر). أحمر/وردي مع خط أبيض متقطع = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA، اقرأ قيمته من المحور عند الشمعة التي حدث عندها الكسر. entry وsl وtp من أداة الصفقة إن وُجدت. sweep = أعلى سعر لمسته أي شمعة (أعلى ذؤابة) في الجلسة، وreach = أدنى سعر لمسته أي شمعة (أدنى ذؤابة)، قدّرهما من المحور.\n"
+   + "إذا لم يكن لخط وسم، قدّر قيمته بالتناسب بين أقرب رقمين على المحور. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق.\n"
    + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"final\":{\"dir\":\"sell\",\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0}}";
   function initPic(){
     if (!window.claude || !window.claude.use) return;
@@ -345,17 +332,16 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
           ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
             var v = num(j[k]); if (v != null) { S[k] = String(v); n++; }
           });
-          if (j.dir === "buy" || j.dir === "sell") S.dir = j.dir;
-          S.gClose = ""; S.rClose = ""; S.reach = ""; S.candle = "";
+                    S.gClose = ""; S.rClose = ""; S.candle = "";
           reload();
-          var miss=["orange","blue","ema","entry","sl","tp"].filter(function(k){return num(j[k])==null});
-          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+" راجع الأرقام، واكتب يدويًا: سعر الإغلاق، أبعد سعر بعد السحب، ورقم الشمعة.";
+          var miss=["orange","blue","ema"].filter(function(k){return num(j[k])==null});
+          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+" راجع الأرقام، واكتب يدويًا: سعر الإغلاق ورقم الشمعة والوقت.";
         }).catch(function(e){
           $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار. ("+((e&&(e.code||e.message))||"خطأ")+")";
         }).then(function(){ $("picGo").disabled = false; });
       });
     }).catch(function(){});
   }
-  bindTop(); build(); update(); initPic();
+  build(); update(); initPic();
 })();
 </script>
