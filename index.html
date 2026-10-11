@@ -69,7 +69,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
 .rr b{font-family:var(--f-num);font-size:1.05rem}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:.85rem;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
-.note{font-size:.78rem;color:var(--muted);margin:0}
+.note{font-size:.78rem;color:var(--muted);margin:0;white-space:pre-line}
 .pic{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .pic h2{font-size:1rem;margin:0}
 .pic img{max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line);align-self:flex-start}
@@ -100,7 +100,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
     <p class="rule">ارفق لقطة الشارت وأقرأ منها المستويات وأعبّي الحقول. القراءة تقريبية، فراجع الأرقام قبل الاعتماد عليها.</p>
     <input type="file" id="picFile" accept="image/*">
     <img id="picPrev" alt="معاينة الشارت" hidden>
-    <div class="row"><button type="button" class="btn main" id="picGo" disabled>اقرأ الصورة وعبّي الحقول</button></div>
+    <div class="row"><button type="button" class="btn main" id="picBuy" disabled>اقرأ شروط الشراء</button><button type="button" class="btn main" id="picSell" disabled>اقرأ شروط البيع</button><button type="button" class="btn" id="picBoth" disabled>اقرأ الاثنين</button></div>
     <p class="note" id="picMsg"></p>
   </div>
 
@@ -317,53 +317,73 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline
       img.onerror = rej; img.src = url;
     });
   }
-  var PROMPT = "أنت تقرأ لقطة شاشة من TradingView (شارت NAS100 أو XAUUSD). اعمل خطوتين وأعد JSON واحد فقط بلا أي نص خارجه.\n"
-   + "الخطوة 1 (tags): انسخ كل الوسوم الملوّنة على المحور الأيمن من الأعلى للأسفل: اللون والرقم كما هو مكتوب. قد يوجد وسمان بنفس اللون، وهذا طبيعي. الوسم الأحمر الأخير أو الأبيض المحاط بإطار غالبا هو سعر السوق الحالي وليس خطا.\n"
-   + "الخطوة 2 (final): اربط الوسوم بالخطوط الأفقية الظاهرة بنفس اللون: برتقالي = سحب السيولة orange (إذا وُجد خطان برتقاليان خذ الأعلى). أخضر فاتح قريب من البرتقالي = حدود المنطقة الشرائية (gTop الأعلى وgBot الأدنى). أزرق = السيولة الطبيعية blue (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق أفقي ظاهر). أحمر/وردي مع خط أبيض متقطع = حدود المنطقة البيعية (rTop الأعلى وrBot الأدنى). الخط الأصفر المنحني = EMA، اقرأ قيمته من المحور عند الشمعة التي حدث عندها الكسر. entry وsl وtp من أداة الصفقة إن وُجدت. sweep = أعلى سعر لمسته أي شمعة (أعلى ذؤابة) في الجلسة، وreach = أدنى سعر لمسته أي شمعة (أدنى ذؤابة)، قدّرهما من المحور.\n"
-   + "إذا لم يكن لخط وسم، قدّر قيمته بالتناسب بين أقرب رقمين على المحور. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق.\n"
-   + "الخطوة 3 (candles): اذكر آخر 14 شمعة مغلقة من اليسار لليمين. استبعد الشمعة الأخيرة عند حافة المحور إن كانت ما زالت تتشكل (تلامس وسم السعر الحالي). لكل شمعة: c = سعر إغلاقها تقريبا (الشمعة البيضاء صاعدة وإغلاقها أعلى جسمها، والحمراء هابطة وإغلاقها أسفل جسمها، وليس الذؤابة). a = true إذا كان إغلاقها (طرف الجسم) فوق الخط العلوي للمنطقة الخضراء بصريا. b = true إذا كان إغلاقها تحت الخط السفلي للمنطقة الحمراء بصريا. احكم بصريا بالنسبة للخطوط لا بالأرقام، لأن الفرق قد يكون صغيرا.\n"
-   + "أضف أيضا في final: price = السعر الحالي من الوسم الأبيض المحاط بإطار إن وُجد، وlastTime = وقت آخر شمعة مغلقة بصيغة HH:MM كما يظهر على المحور الأفقي.\n"
-   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"candles\":[{\"c\":0,\"a\":false,\"b\":false}],\"final\":{\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"blue\":0,\"reach\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0,\"price\":0,\"lastTime\":\"HH:MM\"}}";
+  var COMMON = "أنت تقرأ لقطة شاشة من TradingView. أعد JSON واحدا فقط بلا أي نص خارجه.\n"
+   + "قاعدة الأسعار: على المحور الأيمن وسوم ملوّنة بنفس لون الخطوط الأفقية وفيها الرقم الدقيق. اقرأ الرقم من الوسم المطابق للون الخط أولا، وإذا لم يوجد وسم قدّر السعر بالتناسب بين أقرب رقمين على المحور. الوسم الأبيض المحاط بإطار هو السعر الحالي وليس خطا. قد يوجد وسمان بنفس اللون وهذا طبيعي.\n"
+   + "الخط الأصفر المنحني = EMA: اقرأ قيمته من المحور عند آخر شمعة مغلقة.\n"
+   + "أداة الصفقة (مستطيل أحمر وأخضر) إن وُجدت تعطي entry وsl وtp، وإلا اكتبها null.\n"
+   + "price = السعر الحالي من الوسم الأبيض المحاط بإطار. lastTime = وقت آخر شمعة مغلقة HH:MM من المحور الأفقي.\n"
+   + "candles = آخر 14 شمعة مغلقة من اليسار لليمين، واستبعد الشمعة الأخيرة عند الحافة إن كانت ما زالت تتشكل. c = إغلاق الشمعة تقريبا (البيضاء صاعدة وإغلاقها أعلى جسمها، والحمراء هابطة وإغلاقها أسفل جسمها، وليس الذؤابة).\n"
+   + "احكم على الإغلاق بصريا بالنسبة للخطوط لا بالأرقام، لأن الفرق قد يكون نقطة واحدة. لا تكتب null إلا إذا كان العنصر غير موجود فعلا بعد التدقيق.\n";
+  var P_BUY = COMMON + "المطلوب هنا شروط الشراء فقط، وتجاهل الأزرق والأحمر تماما.\n"
+   + "orange = الخط الأفقي البرتقالي (إذا وُجد خطان خذ الأعلى). gTop وgBot = الخطان الأخضران الفاتحان القريبان من البرتقالي، الأعلى والأدنى. sweep = أعلى سعر لمسته أي ذؤابة.\n"
+   + "في كل شمعة: a = true إذا أغلقت فوق الخط العلوي للمنطقة الخضراء.\n"
+   + "الشكل: {\"tags\":[{\"color\":\"orange\",\"value\":0}],\"candles\":[{\"c\":0,\"a\":false}],\"final\":{\"orange\":0,\"sweep\":0,\"gTop\":0,\"gBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0,\"price\":0,\"lastTime\":\"HH:MM\"}}";
+  var P_SELL = COMMON + "المطلوب هنا شروط البيع فقط، وتجاهل البرتقالي والأخضر تماما.\n"
+   + "blue = الخط الأفقي الأزرق (إذا وُجد وسمان أزرقان فاختر الذي يمر عنده خط أزرق ظاهر). rTop وrBot = حدّا المنطقة الحمراء (خطوط حمراء/وردية مع خط أبيض متقطع)، الأعلى والأدنى. reach = أدنى سعر لمسته أي ذؤابة.\n"
+   + "في كل شمعة: b = true إذا أغلقت تحت الخط السفلي للمنطقة الحمراء.\n"
+   + "الشكل: {\"tags\":[{\"color\":\"blue\",\"value\":0}],\"candles\":[{\"c\":0,\"b\":false}],\"final\":{\"blue\":0,\"reach\":0,\"rTop\":0,\"rBot\":0,\"ema\":0,\"entry\":0,\"sl\":0,\"tp\":0,\"price\":0,\"lastTime\":\"HH:MM\"}}";
+
+  function readOne(sample, mode){
+    var buy = mode === "buy";
+    return sample(buy ? P_BUY : P_SELL, {images:[picBlob], cache:false, modelTier:"complex"}).then(function(r){
+      var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
+      var j = JSON.parse(m[0]), cand = (j.candles||[]).filter(function(x){ return x && typeof x==="object"; });
+      j = j.final || j;
+      var keys = buy ? ["orange","sweep","gTop","gBot"] : ["blue","reach","rTop","rBot"], n = 0, miss = [];
+      keys.forEach(function(k){ var v = num(j[k]); if (v != null) { S[k] = String(v); n++; } else miss.push(k); });
+      ["ema","sl","tp"].forEach(function(k){ var v = num(j[k]); if (v != null) S[k] = String(v); });
+      var flag = buy ? "a" : "b", pair = null;
+      for (var i = cand.length-2; i >= 0 && !pair; i--) if (cand[i][flag] === true && cand[i+1][flag] === true) pair = [cand[i].c, cand[i+1].c];
+      var c1 = buy ? "gClose" : "rClose", c2 = buy ? "gClose2" : "rClose2", vis = buy ? "gVis" : "rVis";
+      S[c1] = ""; S[c2] = ""; S[vis] = "";
+      if (pair) { S[vis] = "1"; if (num(pair[0])!=null) S[c1] = String(num(pair[0])); if (num(pair[1])!=null) S[c2] = String(num(pair[1])); }
+      var extra = "";
+      if (num(S.entry) == null && num(j.price) != null) { S.entry = String(num(j.price)); extra += " سعر الدخول مقدّر من السعر الحالي، عدّله لسعر دخولك الفعلي."; }
+      if (/^\d{1,2}:\d{2}$/.test(String(j.lastTime||""))) { S.time = ("0"+String(j.lastTime)).slice(-5); extra += " الوقت من آخر شمعة، تأكد أنه بتوقيت السعودية."; }
+      return (buy ? "الشراء: " : "البيع: ") + "قرأت "+n+" من 4 مستويات" + (miss.length ? " (ما لقيت: "+miss.join("، ")+")" : "") + ". "
+        + (pair ? "لقيت شمعتين متتاليتين مغلقتين "+(buy?"فوق الأخضر":"تحت الأحمر")+"." : "ما لقيت شمعتين متتاليتين مغلقتين "+(buy?"فوق الأخضر":"تحت الأحمر")+".") + extra;
+    });
+  }
+
   function initPic(){
     if (!window.claude || !window.claude.use) return;
     window.claude.use("sample").then(function(sample){
       if (!sample) return;
       $("picCard").hidden = false;
+      var btns = ["picBuy","picSell","picBoth"].map($);
+      function busy(b){ btns.forEach(function(x){ x.disabled = b || !picBlob; }); }
       $("picFile").addEventListener("change", function(){
-        var fl = $("picFile").files[0]; picBlob = null; $("picGo").disabled = true; $("picMsg").textContent = "";
+        var fl = $("picFile").files[0]; picBlob = null; busy(true); $("picMsg").textContent = "";
         if (!fl) { $("picPrev").hidden = true; return; }
         shrink(fl).then(function(b){
-          picBlob = b; $("picPrev").src = URL.createObjectURL(b); $("picPrev").hidden = false; $("picGo").disabled = false;
+          picBlob = b; $("picPrev").src = URL.createObjectURL(b); $("picPrev").hidden = false; busy(false);
         }).catch(function(){ $("picMsg").textContent = "ما قدرت أقرأ الملف. ارفق صورة PNG أو JPG."; });
       });
-      $("picGo").addEventListener("click", function(){
+      function run(modes){
         if (!picBlob) return;
-        $("picGo").disabled = true; $("picMsg").textContent = "جاري قراءة الصورة...";
-        sample(PROMPT,{images:[picBlob],cache:false,modelTier:"complex"}).then(function(r){
-          var m = String(r.text).match(/\{[\s\S]*\}/); if(!m) throw new Error("bad");
-          var j = JSON.parse(m[0]), n = 0, cand = (j.candles||[]).filter(function(x){ return x && typeof x==="object"; }); j = j.final || j;
-          ["orange","sweep","gTop","gBot","blue","rTop","rBot","ema","entry","sl","tp"].forEach(function(k){
-            var v = num(j[k]); if (v != null) { S[k] = String(v); n++; }
-          });
-                    S.gClose = ""; S.gClose2 = ""; S.rClose = ""; S.rClose2 = ""; S.candle = "";
-          S.gVis = ""; S.rVis = ""; var bp = null, sp = null;
-          for (var i = cand.length-2; i >= 0; i--) {
-            if (!bp && cand[i].a === true && cand[i+1].a === true) bp = [cand[i].c, cand[i+1].c];
-            if (!sp && cand[i].b === true && cand[i+1].b === true) sp = [cand[i].c, cand[i+1].c];
-          }
-          if (bp) { S.gVis = "1"; if (num(bp[0])!=null) S.gClose = String(num(bp[0])); if (num(bp[1])!=null) S.gClose2 = String(num(bp[1])); }
-          if (sp) { S.rVis = "1"; if (num(sp[0])!=null) S.rClose = String(num(sp[0])); if (num(sp[1])!=null) S.rClose2 = String(num(sp[1])); }
-          var extra = "";
-          if (num(S.entry) == null && num(j.price) != null) { S.entry = String(num(j.price)); extra += " سعر الدخول مقدّر من السعر الحالي، عدّله لسعر دخولك الفعلي."; }
-          if (/^\d{1,2}:\d{2}$/.test(String(j.lastTime||""))) { S.time = ("0"+String(j.lastTime)).slice(-5); extra += " الوقت من آخر شمعة في الشارت، تأكد أنه بتوقيت السعودية."; }
-          var cm = (bp ? " لقيت شمعتين متتاليتين مغلقتين فوق الأخضر." : "") + (sp ? " لقيت شمعتين متتاليتين مغلقتين تحت الأحمر." : "") + (!bp && !sp ? " ما لقيت شمعتين متتاليتين مغلقتين خلف أي منطقة." : "");
-          reload();
-          var miss=["orange","blue","ema"].filter(function(k){return num(j[k])==null});
-          $("picMsg").textContent = "تم تعبئة "+n+" حقل من الصورة."+(miss.length?" ما لقيت: "+miss.join("، ")+".":"")+cm+extra+" راجع الأرقام، واكتب يدويًا: رقم الشمعة والوقت.";
-        }).catch(function(e){
-          $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ المستويات من الصورة. جرّب لقطة أوضح تظهر محور الأسعار. ("+((e&&(e.code||e.message))||"خطأ")+")";
-        }).then(function(){ $("picGo").disabled = false; });
-      });
+        busy(true); $("picMsg").textContent = "جاري قراءة الصورة...";
+        var msgs = [], chain = Promise.resolve();
+        modes.forEach(function(mode){
+          chain = chain.then(function(){ return readOne(sample, mode); }).then(function(t){ msgs.push(t); reload(); $("picMsg").textContent = msgs.join("\n"); });
+        });
+        chain.then(function(){ $("picMsg").textContent = msgs.join("\n") + "\nراجع الأرقام، واكتب يدويًا رقم الشمعة."; })
+          .catch(function(e){
+            $("picMsg").textContent = (e && e.code === "not_granted") ? "ما تم السماح بقراءة الصورة. اسمح بها وجرّب مرة ثانية." : "ما قدرت أقرأ الصورة. جرّب لقطة أوضح تظهر محور الأسعار. ("+((e&&(e.code||e.message))||"خطأ")+")";
+          }).then(function(){ busy(false); });
+      }
+      $("picBuy").addEventListener("click", function(){ run(["buy"]); });
+      $("picSell").addEventListener("click", function(){ run(["sell"]); });
+      $("picBoth").addEventListener("click", function(){ run(["buy","sell"]); });
     }).catch(function(){});
   }
   build(); update(); initPic();
