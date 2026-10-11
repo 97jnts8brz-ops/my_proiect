@@ -127,7 +127,7 @@ body:not(.intro-ready) .header,body:not(.intro-ready) .planet-list,body:not(.int
   .planet-list{display:none}
   .portal-wrap{top:44%;width:min(260px,66vw)}
   .planet-content{left:18px;right:18px;bottom:18px;display:block}
-  .planet-content h1{font-size:clamp(80px,23vw,160px);margin-bottom:20px}
+  .planet-content h1{font-size:clamp(80px,23vw,160px);margin-bottom:20px;margin-left:32px}
   .planet-content dl{width:100%;font-size:13px}
   .fact{grid-template-columns:92px 1fr;padding:5px 0}
   .portal-heading{font-size:14px}
@@ -371,7 +371,16 @@ body:not(.intro-ready) .header,body:not(.intro-ready) .planet-list,body:not(.int
       ctx.fillStyle = '#030303'; ctx.fillRect(0, 0, innerWidth, innerHeight);
       var src = transitionActive ? tVideo : (states[current].image ? portalImage : portalVideo);
       if (src.tagName === 'VIDEO' && !src.videoWidth) src = portalImage; // video unavailable: show the bottle
-      drawCover(ctx, src);
+      if (src === portalImage) {
+        // studio product shot: whole bottle, never cropped, on the photo's own white
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, innerWidth, innerHeight);
+        var iw = portalImage.naturalWidth, ih = portalImage.naturalHeight;
+        if (iw && ih) {
+          var f = Math.min(w / iw, h / ih) * 1.45;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(portalImage, cx - iw * f / 2, cy - ih * f / 2, iw * f, ih * f);
+        }
+      } else drawCover(ctx, src);
       if (transitionActive) drawShade(ctx);
       ctx.restore();
     }
